@@ -458,7 +458,6 @@ export default function Workspace({
             <span className="brand-mark">
               <Network size={19} />
             </span>
-            <b>Network Intelligence</b>
           </div>
           <div className="breadcrumb">
             Personal workspace <ChevronRight size={13} /> {tab}
@@ -473,9 +472,6 @@ export default function Workspace({
                 <LogOut size={18} />
               </button>
             )}
-            <Badge tone={mode === "demo" ? "amber" : "green"}>
-              {mode === "demo" ? "Demo mode" : "Private workspace"}
-            </Badge>
             <button
               className="icon notification"
               aria-label="View follow-ups"

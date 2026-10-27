@@ -1,4 +1,4 @@
-import Workspace from "@/components/workspace";
+import EntryFlow from "@/components/entry-flow";
 export default function Page() {
-  return <Workspace />;
+  return <EntryFlow screen="signin" />;
 }

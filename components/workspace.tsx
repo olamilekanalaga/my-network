@@ -58,6 +58,8 @@ import ImportWizard from "./import-wizard";
 import Assistant from "./assistant";
 import ContextCoach from "./context-coach";
 import NetworkAction from "./network-action";
+import { goals } from "@/lib/goals";
+import type { SelfProfile } from "@/lib/self-profile";
 const nav = [
   { name: "Home", icon: Home },
   { name: "People", icon: Users },
@@ -65,57 +67,6 @@ const nav = [
   { name: "Opportunities", icon: BriefcaseBusiness },
   { name: "Settings", icon: Settings },
 ];
-const goals = {
-  "Business developer": {
-    title: "Your next deal starts with a hello.",
-    detail:
-      "Find partners, build warm introductions, and keep your pipeline moving.",
-    action: "Explore my pipeline",
-    tab: "Opportunities",
-    prompts: [
-      "Who in my network needs marketing services?",
-      "Who can help a fintech expand into the UK?",
-      "Which customers also provide services I need?",
-    ],
-  },
-  "Business owner": {
-    title: "Big plans. Meet your people.",
-    detail:
-      "Find trusted suppliers, connect with collaborators, and grow your business.",
-    action: "Find my people",
-    tab: "People",
-    prompts: [
-      "Who can print 5,000 event materials in London?",
-      "Who provides marketing services?",
-      "Which customers also provide services I need?",
-    ],
-  },
-  Recruiter: {
-    title: "Good talent. Real connections.",
-    detail:
-      "Explore skills, remember the context, and keep candidate conversations moving.",
-    action: "Explore my contacts",
-    tab: "People",
-    prompts: [
-      "Who has software development skills?",
-      "Who has experience in marketing?",
-      "Who in my network works in fintech?",
-    ],
-  },
-  "Job seeker": {
-    title: "Your next chapter starts here.",
-    detail:
-      "Discover people in your field, find warm connections, and follow up with confidence.",
-    action: "Explore my network",
-    tab: "Network",
-    prompts: [
-      "Who in my network works in technology?",
-      "Who has connections in marketing?",
-      "Who can help with business introductions?",
-    ],
-  },
-} as const;
-type Goal = keyof typeof goals;
 const money = (n: number | null) =>
   n === null
     ? "Not agreed"
@@ -124,18 +75,22 @@ const money = (n: number | null) =>
         currency: "GBP",
         maximumFractionDigits: 0,
       }).format(n);
-export default function Workspace() {
+export default function Workspace({
+  profile,
+  onEditProfile,
+  onExit,
+}: {
+  profile?: SelfProfile;
+  onEditProfile?: () => void;
+  onExit?: () => void;
+}) {
   const store = useStore();
   const [nextAction, setNextAction] = useState<{
     person: Person;
     goal: string;
   } | null>(null);
-  const [goal, setGoal] = useState<Goal>("Business developer");
+  const goal = profile?.role || "Business developer";
   const focus = goals[goal];
-  useEffect(() => {
-    const savedGoal = localStorage.getItem("network-goal");
-    if (savedGoal && savedGoal in goals) setGoal(savedGoal as Goal);
-  }, []);
   const { data, mode, busy, error, ready } = store;
   const [tab, setTab] = useState("Home"),
     [search, setSearch] = useState(""),
@@ -458,8 +413,18 @@ export default function Workspace() {
           <h4>Less scrolling. More connecting.</h4>
           <p>Your next opportunity might already be in your network.</p>
         </div>
+        {onEditProfile && (
+          <button className="secondary" onClick={onEditProfile}>
+            Edit my profile
+          </button>
+        )}
+        {onExit && (
+          <button className="text-link" onClick={onExit}>
+            Sign out / leave demo
+          </button>
+        )}
         <button className="account" onClick={() => setTab("Settings")}>
-          <Avatar name={store.email || "Your Workspace"} />
+          <Avatar name={profile?.name || store.email || "Your Workspace"} />
           <span>
             <strong>
               {mode === "demo"
@@ -485,6 +450,15 @@ export default function Workspace() {
             Personal workspace <ChevronRight size={13} /> {tab}
           </div>
           <div className="top-actions">
+            {onExit && (
+              <button
+                className="icon mobile-only"
+                aria-label="Sign out / leave demo"
+                onClick={onExit}
+              >
+                <LogOut size={18} />
+              </button>
+            )}
             <Badge tone={mode === "demo" ? "amber" : "green"}>
               {mode === "demo" ? "Demo mode" : "Private workspace"}
             </Badge>
@@ -501,7 +475,7 @@ export default function Workspace() {
               <Bell size={19} />
               {followups.length > 0 && <i />}
             </button>
-            <Avatar name="Your Workspace" />
+            <Avatar name={profile?.name || "Your Workspace"} />
           </div>
         </header>
         <main>
@@ -535,7 +509,11 @@ export default function Workspace() {
                   <div className="eyebrow">
                     REAL PEOPLE. REAL POSSIBILITIES.
                   </div>
-                  <h1>{focus.title}</h1>
+                  <h1>
+                    {profile
+                      ? `Your next move, ${profile.name.split(" ")[0]}.`
+                      : focus.title}
+                  </h1>
                   <p>{focus.detail}</p>
                 </div>
                 <button
@@ -546,45 +524,25 @@ export default function Workspace() {
                   Import contacts
                 </button>
               </div>
-              <section
-                className="goal-panel"
-                aria-label="Personalize your workspace"
-              >
-                <div className="goal-label">
-                  I’m here as a <span>Make this space yours</span>
-                </div>
-                <div className="goal-options">
-                  {(Object.keys(goals) as Goal[]).map((item) => (
-                    <button
-                      key={item}
-                      aria-pressed={goal === item}
-                      onClick={() => {
-                        setGoal(item);
-                        localStorage.setItem("network-goal", item);
-                      }}
-                    >
-                      {item}
-                      <ArrowUpRight size={15} />
-                    </button>
-                  ))}
-                </div>
-                <div className="goal-next">
-                  <span>Small steps. Big connections.</span>
-                  <button
-                    onClick={() => {
-                      setTab(focus.tab);
-                      setSearch("");
-                    }}
-                  >
-                    {focus.action}
-                    <ArrowRight size={16} />
+              {profile && (
+                <section className="profile-focus">
+                  <div>
+                    <span className="eyebrow">
+                      {profile.role.toUpperCase()}
+                    </span>
+                    <h2>Your focus: {profile.goal}</h2>
+                    {profile.headline && (
+                      <p>
+                        {profile.headline}
+                        {profile.location ? ` · ${profile.location}` : ""}
+                      </p>
+                    )}
+                  </div>
+                  <button className="secondary" onClick={onEditProfile}>
+                    Edit my profile
                   </button>
-                  <button onClick={() => setEditPerson(blankPerson())}>
-                    <Plus size={16} />
-                    Add a connection
-                  </button>
-                </div>
-              </section>
+                </section>
+              )}
               <div className="stats">
                 {[
                   {
@@ -634,7 +592,11 @@ export default function Workspace() {
                 <div>
                   <Assistant
                     onAction={(person, goal) => setNextAction({ person, goal })}
-                    prompts={focus.prompts}
+                    prompts={
+                      profile?.goal
+                        ? [profile.goal, ...focus.prompts]
+                        : focus.prompts
+                    }
                     data={data}
                     mode={mode}
                     allowAI={allowAI}

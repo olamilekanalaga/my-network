@@ -5,6 +5,7 @@ import { demoData } from "./demo";
 import { emptyData, tables, type Data, type Table } from "./types";
 import { schemas } from "./validation";
 import { deletePerson } from "./import";
+import { entryModeKey } from "./self-profile";
 const key = "network-intelligence-demo-v1";
 export function useStore() {
   const [data, setData] = useState<Data>(emptyData);
@@ -60,20 +61,38 @@ export function useStore() {
     }
   }, []);
   useEffect(() => {
-    load(false);
-    if (configured()) {
-      const db = browserDb();
-      db.auth.getSession().then(({ data }) => {
-        if (data.session) load(true);
-      });
-      const {
-        data: { subscription },
-      } = db.auth.onAuthStateChange((event, session) => {
-        if (event === "SIGNED_IN" && session) setTimeout(() => load(true), 0);
-        if (event === "SIGNED_OUT") load(false);
-      });
-      return () => subscription.unsubscribe();
+    let active = true;
+    async function initialize() {
+      try {
+        if (localStorage.getItem(entryModeKey) === "demo" || !configured()) {
+          if (active) await load(false);
+          return;
+        }
+        const { data, error } = await browserDb().auth.getSession();
+        if (error) throw error;
+        if (active) await load(Boolean(data.session));
+      } catch (e) {
+        if (active) {
+          setError((e as Error).message);
+          setReady(true);
+        }
+      }
     }
+    void initialize();
+    const subscription = configured()
+      ? browserDb().auth.onAuthStateChange((event, session) => {
+          if (localStorage.getItem(entryModeKey) === "demo") return;
+          if (event === "SIGNED_IN" && session)
+            setTimeout(() => {
+              if (active) void load(true);
+            }, 0);
+          if (event === "SIGNED_OUT" && active) void load(false);
+        }).data.subscription
+      : null;
+    return () => {
+      active = false;
+      subscription?.unsubscribe();
+    };
   }, [load]);
   useEffect(() => {
     if (ready && mode === "demo")

@@ -59,6 +59,17 @@ export function PersonForm({
           Start with the basics. Add what you actually know; leave unknown
           details empty.
         </p>
+        <div className="context-guide">
+          <strong>Four things that make matching useful</strong>
+          <p>
+            Who are they? What can they provide? What do they need? How do you
+            know them?
+          </p>
+          <small>
+            A phone number doesn’t answer these questions. Record only what you
+            know, then ask them to confirm the rest.
+          </small>
+        </div>
         <div className="form-grid">
           {input("name", "Full name *")}
           {input("position", "Position / company")}
@@ -86,13 +97,17 @@ export function PersonForm({
             }
           />
         </Field>
-        {input("services", "Services / products they sell", "textarea")}
+        {input(
+          "services",
+          "What can they provide? Services / products",
+          "textarea",
+        )}
         {input("building", "What they are building", "textarea")}
-        {input("needs", "What they need", "textarea")}
+        {input("needs", "What do they need?", "textarea")}
         {input("offers", "What they can offer", "textarea")}
         {input("resources", "Resources and access they control", "textarea")}
         <div className="form-grid">
-          {input("met", "Where we met")}
+          {input("met", "How do you know them? Where did you meet?")}
           {input("met_date", "When we met", "date")}
         </div>
         {input("notes", "Private conversation notes", "textarea")}

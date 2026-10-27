@@ -24,11 +24,6 @@ export async function POST(req: Request) {
       body.question.length > 2000
     )
       throw new HttpError(400, "Ask a question up to 2,000 characters.");
-    if (body.allowAI !== true)
-      throw new HttpError(
-        400,
-        "Approve sending retrieved network context to OpenAI first.",
-      );
     const data = emptyData();
     for (const table of tables) {
       const { data: rows, error } = await db
@@ -45,7 +40,11 @@ export async function POST(req: Request) {
       body.privateNotes === true,
     );
     base.mode = "rules";
-    if (!process.env.OPENAI_API_KEY || !base.recommendations.length)
+    if (
+      body.allowAI !== true ||
+      !process.env.OPENAI_API_KEY ||
+      !base.recommendations.length
+    )
       return Response.json(base);
     const retrieved = retrieve(body.question, data, body.privateNotes === true);
     const response = await fetch("https://api.openai.com/v1/responses", {

@@ -56,6 +56,8 @@ import {
 import { PersonForm, OrganizationForm, OpportunityForm } from "./forms";
 import ImportWizard from "./import-wizard";
 import Assistant from "./assistant";
+import ContextCoach from "./context-coach";
+import NetworkAction from "./network-action";
 const nav = [
   { name: "Home", icon: Home },
   { name: "People", icon: Users },
@@ -124,6 +126,10 @@ const money = (n: number | null) =>
       }).format(n);
 export default function Workspace() {
   const store = useStore();
+  const [nextAction, setNextAction] = useState<{
+    person: Person;
+    goal: string;
+  } | null>(null);
   const [goal, setGoal] = useState<Goal>("Business developer");
   const focus = goals[goal];
   useEffect(() => {
@@ -619,9 +625,15 @@ export default function Workspace() {
                   </div>
                 ))}
               </div>
+              <ContextCoach
+                people={data.people}
+                onEdit={setEditPerson}
+                onImport={() => setImporting(true)}
+              />
               <div className="home-grid">
                 <div>
                   <Assistant
+                    onAction={(person, goal) => setNextAction({ person, goal })}
                     prompts={focus.prompts}
                     data={data}
                     mode={mode}
@@ -1485,7 +1497,17 @@ export default function Workspace() {
             </div>
           </div>
           <div className="profile-section">
-            <SectionTitle title="Context & contact" />
+            <SectionTitle
+              title="Context & contact"
+              action={
+                <button
+                  className="primary"
+                  onClick={() => setNextAction({ person: p, goal: "" })}
+                >
+                  Take action
+                </button>
+              }
+            />
             <p>
               {p.email} {p.phone && `· ${p.phone}`}
             </p>
@@ -1806,6 +1828,15 @@ export default function Workspace() {
             </button>
           </div>
         </Modal>
+      )}
+      {nextAction && (
+        <NetworkAction
+          data={data}
+          person={nextAction.person}
+          goal={nextAction.goal}
+          onClose={() => setNextAction(null)}
+          onSave={(activity) => store.save("activities", activity)}
+        />
       )}
       {editPerson && (
         <PersonForm

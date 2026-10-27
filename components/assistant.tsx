@@ -3,7 +3,7 @@ import { useState } from "react";
 import { ArrowUp, Sparkles, ArrowRight, Plus, ShieldCheck } from "lucide-react";
 import { answerQuestion, graphPath, type Answer } from "@/lib/intelligence";
 import { browserDb } from "@/lib/supabase";
-import { type Data, type Opportunity, uid } from "@/lib/types";
+import { type Data, type Opportunity, type Person, uid } from "@/lib/types";
 import { Avatar, Badge, SafeLink } from "./ui";
 const defaultPrompts = [
   "Who can print 5,000 event materials in London?",
@@ -12,6 +12,7 @@ const defaultPrompts = [
 ];
 export default function Assistant({
   prompts = defaultPrompts,
+  onAction,
   data,
   mode,
   allowAI,
@@ -19,6 +20,7 @@ export default function Assistant({
   onSave,
   onPerson,
 }: {
+  onAction: (person: Person, goal: string) => void;
   prompts?: readonly string[];
   data: Data;
   mode: string;
@@ -38,7 +40,7 @@ export default function Assistant({
     setError("");
     setLast(question);
     try {
-      if (mode === "demo")
+      if (mode === "demo" || !allowAI)
         setAnswer(answerQuestion(question, data, privateNotes));
       else {
         const {
@@ -103,7 +105,7 @@ export default function Assistant({
             ? "Demo · evidence engine"
             : allowAI
               ? "AI enabled"
-              : "AI disabled"}
+              : "Local matching"}
         </Badge>
       </div>
       <form
@@ -140,7 +142,9 @@ export default function Assistant({
         <ShieldCheck size={13} />
         {mode === "demo"
           ? "Uses only your local demo records. No data is sent to AI."
-          : "Only retrieved records are sent with your approval. Private notes are optional."}
+          : allowAI
+            ? "Only retrieved records are sent with your approval. Private notes are optional."
+            : "Matches saved records on this device. No records are sent to AI."}
       </p>
       {busy && (
         <p role="status">Searching saved records and relationship paths…</p>
@@ -173,6 +177,11 @@ export default function Assistant({
                   <ArrowRight size={17} className="push" />
                 </button>
                 <div className="path">
+                  {!r.path.length && (
+                    <small>
+                      Saved contact · how you know them is not recorded
+                    </small>
+                  )}
                   {r.path.map((p, i) => (
                     <span key={i}>
                       {i > 0 && <ArrowRight size={12} />}
@@ -186,7 +195,7 @@ export default function Assistant({
                   <dt>Contributes</dt>
                   <dd>{r.contributes}</dd>
                 </dl>
-                <details open>
+                <details>
                   <summary>Saved evidence · {r.evidence.length}</summary>
                   {r.evidence.map((e) => (
                     <div className="evidence" key={e.id}>
@@ -221,6 +230,15 @@ export default function Assistant({
                 <p className="small">
                   <b>Verify:</b> {r.verify}
                 </p>
+                <button
+                  className="primary"
+                  onClick={() => {
+                    const person = data.people.find((p) => p.id === r.personId);
+                    if (person) onAction(person, last);
+                  }}
+                >
+                  Contact or request an introduction
+                </button>
                 <p className="next-step">
                   <b>Next step</b> {r.nextStep}
                 </p>

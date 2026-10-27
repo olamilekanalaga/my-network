@@ -43,6 +43,13 @@ export function terms(s: string) {
     .replace(/introduction|introduce|introductions/g, "intro")
     .replace(/conferences?/g, "event")
     .replace(/technology/g, "tech")
+    .replace(/recruiters?|recruitment|hiring/g, "recruit")
+    .replace(
+      /developers?|development|programmers?|programming|coding/g,
+      "software",
+    )
+    .replace(/designers?|designing/g, "design")
+    .replace(/suppliers?|providers?/g, "supplier")
     .replace(/nigerian/g, "nigeria")
     .replace(/founders?/g, "founder")
     .split(/[^\p{L}\p{N}]+/u)
@@ -79,6 +86,7 @@ export function evidenceFor(
   privateNotes = true,
 ): Evidence[] {
   const entries: [string, string][] = [
+    ["role", [p.position, p.industry].filter(Boolean).join(" · ")],
     ["services", p.services],
     ["offers", p.offers],
     ["needs", p.needs],
@@ -158,10 +166,30 @@ export function retrieve(question: string, data: Data, privateNotes = true) {
         ].join(" "),
       );
       const hits = words.filter((w) => text.includes(w));
+      const capability = terms(
+        [
+          p.position,
+          p.industry,
+          p.services,
+          p.offers,
+          p.skills.join(" "),
+          p.resources,
+        ].join(" "),
+      );
+      const capabilityHits = words.filter((w) => capability.includes(w));
+      const wantsProvider =
+        /\b(print|hire|hiring|recruit|recruiter|developer|design|supplier|provider|provide|sell|services|build|software)\w*/i.test(
+          question,
+        );
+      const substantive = hits.filter((w) => !terms(p.location).includes(w));
       return {
         p,
         evidence,
-        score: hits.length + (customers && Boolean(p.services) ? 1 : 0),
+        score: substantive.length
+          ? hits.length +
+            capabilityHits.length * (wantsProvider ? 3 : 1) +
+            (customers && Boolean(p.services) ? 1 : 0)
+          : 0,
       };
     })
     .filter((x) => x.score > 0)
@@ -213,7 +241,7 @@ export function answerQuestion(
         name: p.name,
         why: `Saved profile: ${p.position || p.industry || "contact"}.`,
         evidence: (relevant.length ? relevant : evidence).slice(0, 4),
-        path: ["You", p.name],
+        path: p.met.trim() ? ["You", p.name] : [],
         hypothesis:
           "This person may help with the objective; willingness, availability and suitability are unconfirmed.",
         verify:

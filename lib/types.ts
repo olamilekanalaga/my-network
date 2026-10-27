@@ -6,6 +6,7 @@ export const categories = [
   "Friend",
   "Community",
   "Professional",
+  "Skilled worker",
 ] as const;
 export const stages = [
   "Discovered",

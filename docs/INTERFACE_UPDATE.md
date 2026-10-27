@@ -39,3 +39,13 @@ For production Google sign-in, set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_S
 Validation: TypeScript, the production build, and 24 automated tests passed. The live Google provider is not credential-tested in this environment. Deployment status cannot be verified from this environment while access to the production domain and GitHub status API is blocked. A push to `main` triggers deployment only if the Vercel project is connected to this repository and branch with automatic deployments enabled.
 
 Browser validation also passed for first-visit route protection, the Google-unavailable error with demo fallback, demo self-profile creation, profile/contact separation, workspace personalization, reload persistence, profile editing, mobile leave-demo, returning-user redirects, and mobile overflow/runtime errors.
+
+## Wallet-style Home and four-tab navigation
+
+Primary navigation is now Home, Contacts, Ask My network, and Profile. Home uses a wallet-style contact total, quick Add/Import/Ask actions, and a contacts/question-history ledger. Contacts retains Network and Opportunities as secondary tools. Profile contains the user's own profile, editing, and privacy/account controls. Follow-ups open from the network card or notification button.
+
+Founder counts require the saved Founder category. Skilled-worker counts use a nonempty recorded skill or an explicit Skilled worker category, now available in the contact editor. Needs context counts profiles missing role, capabilities, needs, or how the user knows them. Categories can overlap, so their counts are not additive. No monetary network valuation is shown.
+
+Successful questions are recorded as completed, unlinked activity entries with a validated versioned payload: question, timestamp, summary, and historical match count. This reuses the existing owner-scoped activity API/RLS and requires no database migration. Demo history is local; authenticated history uses the connected account's existing storage. Normal reminders and malformed entries do not appear as questions. Tapping a question pre-fills Ask My network so the user can ask again against current records; historical match counts are not presented as current results. Answers remain available if history persistence fails, with an explicit error message. Existing contact records and onboarding remain intact.
+
+Validation: all 27 automated tests and the production build passed. Browser checks covered the four tabs, contact counts/filtering, import, adding a labeled skilled worker, asking a question, persistent history, asking again after reload, profile, follow-ups, mobile overflow, and browser runtime errors.

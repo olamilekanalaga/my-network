@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowUp, Sparkles, ArrowRight, Plus, ShieldCheck } from "lucide-react";
 import { answerQuestion, graphPath, type Answer } from "@/lib/intelligence";
 import { browserDb } from "@/lib/supabase";
@@ -11,6 +11,8 @@ const defaultPrompts = [
   "Build a coalition to help a Nigerian fintech expand into the UK.",
 ];
 export default function Assistant({
+  request,
+  onAnswered,
   prompts = defaultPrompts,
   onAction,
   data,
@@ -20,6 +22,8 @@ export default function Assistant({
   onSave,
   onPerson,
 }: {
+  request?: { id: string; question: string } | null;
+  onAnswered?: (question: string, answer: Answer) => Promise<void>;
   onAction: (person: Person, goal: string) => void;
   prompts?: readonly string[];
   data: Data;
@@ -34,14 +38,22 @@ export default function Assistant({
     [last, setLast] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (request) {
+      setQ(request.question);
+      setAnswer(null);
+      setError("");
+    }
+  }, [request]);
   async function ask(question: string) {
     if (!question.trim()) return;
     setBusy(true);
     setError("");
     setLast(question);
     try {
+      let result: Answer;
       if (mode === "demo" || !allowAI)
-        setAnswer(answerQuestion(question, data, privateNotes));
+        result = answerQuestion(question, data, privateNotes);
       else {
         const {
           data: { session },
@@ -57,9 +69,17 @@ export default function Assistant({
         });
         const body = await r.json();
         if (!r.ok) throw new Error(body.error);
-        setAnswer(body);
+        result = body;
       }
+      setAnswer(result);
       setQ("");
+      try {
+        await onAnswered?.(question, result);
+      } catch {
+        setError(
+          "Your answer is ready, but question history could not be saved. Please try again.",
+        );
+      }
     } catch (e) {
       setError((e as Error).message);
     } finally {

@@ -27,6 +27,8 @@ import {
   PanelTop,
   CheckCircle2,
   MoreHorizontal,
+  MessageCircle,
+  UserRound,
 } from "lucide-react";
 import { useStore, download } from "@/lib/store";
 import { browserDb, configured } from "@/lib/supabase";
@@ -57,15 +59,21 @@ import { PersonForm, OrganizationForm, OpportunityForm } from "./forms";
 import ImportWizard from "./import-wizard";
 import Assistant from "./assistant";
 import ContextCoach from "./context-coach";
+import WalletHome from "./wallet-home";
+import {
+  inContactLayer,
+  questionActivity,
+  questionHistory,
+  type ContactLayer,
+} from "@/lib/wallet";
 import NetworkAction from "./network-action";
 import { goals } from "@/lib/goals";
 import type { SelfProfile } from "@/lib/self-profile";
 const nav = [
   { name: "Home", icon: Home },
-  { name: "People", icon: Users },
-  { name: "Network", icon: Waypoints },
-  { name: "Opportunities", icon: BriefcaseBusiness },
-  { name: "Settings", icon: Settings },
+  { name: "Contacts", icon: Users },
+  { name: "Ask My network", icon: MessageCircle },
+  { name: "Profile", icon: UserRound },
 ];
 const money = (n: number | null) =>
   n === null
@@ -85,6 +93,13 @@ export default function Workspace({
   onExit?: () => void;
 }) {
   const store = useStore();
+  const [contactLayer, setContactLayer] =
+    useState<ContactLayer>("All contacts");
+  const [questionRequest, setQuestionRequest] = useState<{
+    id: string;
+    question: string;
+  } | null>(null);
+  const [showFollowups, setShowFollowups] = useState(false);
   const [nextAction, setNextAction] = useState<{
     person: Person;
     goal: string;
@@ -108,16 +123,20 @@ export default function Workspace({
     >(null),
     [allowAI, setAllowAI] = useState(false),
     [privateNotes, setPrivateNotes] = useState(false),
-    [authEmail, setAuthEmail] = useState(""),
-    [password, setPassword] = useState(""),
-    [authMessage, setAuthMessage] = useState(""),
     [bulk, setBulk] = useState<string[]>([]),
     [pathFrom, setPathFrom] = useState(""),
     [pathTo, setPathTo] = useState(""),
     [notice, setNotice] = useState("");
   useEffect(() => {
     const view = new URLSearchParams(window.location.search).get("view");
-    if (nav.some((n) => n.name === view)) setTab(view!);
+    const selectedView =
+      view === "People" ? "Contacts" : view === "Settings" ? "Profile" : view;
+    if (
+      [...nav.map((n) => n.name), "Network", "Opportunities"].includes(
+        selectedView || "",
+      )
+    )
+      setTab(selectedView!);
     setAllowAI(localStorage.getItem("ni-ai-consent") === "true");
     setPrivateNotes(localStorage.getItem("ni-notes-consent") === "true");
   }, []);
@@ -130,6 +149,7 @@ export default function Workspace({
   const visible = data.people
     .filter(
       (p) =>
+        inContactLayer(p, contactLayer) &&
         (filter === "All people" ||
           p.categories.includes(
             filter === "Customers" ? "Customer" : filter,
@@ -194,39 +214,24 @@ export default function Workspace({
     setPerson(id);
     setOrg(null);
   }
-  async function auth(action: string) {
+  async function connectGoogleContacts() {
     await store.run(async () => {
       const db = browserDb();
-      if (action === "google") {
-        const {
-          data: { session },
-        } = await db.auth.getSession();
-        const options = {
-          scopes: "https://www.googleapis.com/auth/contacts.readonly",
-          redirectTo: window.location.origin,
-        };
-        const result =
-          session &&
-          !session.user.identities?.some((i) => i.provider === "google")
-            ? await db.auth.linkIdentity({ provider: "google", options })
-            : await db.auth.signInWithOAuth({ provider: "google", options });
-        if (result.error) throw result.error;
-        return;
-      }
-      if (action === "out") {
-        await db.auth.signOut();
-        return;
-      }
-      const result =
-        action === "signup"
-          ? await db.auth.signUp({ email: authEmail, password })
-          : await db.auth.signInWithPassword({ email: authEmail, password });
+      const {
+        data: { session },
+      } = await db.auth.getSession();
+      if (!session)
+        throw new Error("Sign in with Google before connecting contacts.");
+      const options = {
+        scopes: "https://www.googleapis.com/auth/contacts.readonly",
+        redirectTo: window.location.origin,
+      };
+      const result = !session.user.identities?.some(
+        (i) => i.provider === "google",
+      )
+        ? await db.auth.linkIdentity({ provider: "google", options })
+        : await db.auth.signInWithOAuth({ provider: "google", options });
       if (result.error) throw result.error;
-      if (action === "signup")
-        setAuthMessage(
-          "Account created. Check your email if confirmation is required.",
-        );
-      else await store.load(true);
     });
   }
   function exportData(shareable = false) {
@@ -394,7 +399,13 @@ export default function Workspace({
           {nav.map((n) => (
             <button
               key={n.name}
-              className={tab === n.name ? "active" : ""}
+              className={
+                tab === n.name ||
+                (n.name === "Contacts" &&
+                  ["Network", "Opportunities"].includes(tab))
+                  ? "active"
+                  : ""
+              }
               onClick={() => {
                 setTab(n.name);
                 setSearch("");
@@ -423,7 +434,7 @@ export default function Workspace({
             Sign out / leave demo
           </button>
         )}
-        <button className="account" onClick={() => setTab("Settings")}>
+        <button className="account" onClick={() => setTab("Profile")}>
           <Avatar name={profile?.name || store.email || "Your Workspace"} />
           <span>
             <strong>
@@ -466,10 +477,7 @@ export default function Workspace({
               className="icon notification"
               aria-label="View follow-ups"
               onClick={() => {
-                setTab("Home");
-                document
-                  .getElementById("followups")
-                  ?.scrollIntoView({ behavior: "smooth" });
+                setShowFollowups(true);
               }}
             >
               <Bell size={19} />
@@ -503,248 +511,81 @@ export default function Workspace({
             </div>
           )}
           {tab === "Home" && (
-            <>
-              <div className="page-heading">
-                <div>
-                  <div className="eyebrow">
-                    REAL PEOPLE. REAL POSSIBILITIES.
-                  </div>
-                  <h1>
-                    {profile
-                      ? `Your next move, ${profile.name.split(" ")[0]}.`
-                      : focus.title}
-                  </h1>
-                  <p>{focus.detail}</p>
-                </div>
-                <button
-                  className="secondary"
-                  onClick={() => setImporting(true)}
-                >
-                  <Upload size={16} />
-                  Import contacts
-                </button>
-              </div>
-              {profile && (
-                <section className="profile-focus">
-                  <div>
-                    <span className="eyebrow">
-                      {profile.role.toUpperCase()}
-                    </span>
-                    <h2>Your focus: {profile.goal}</h2>
-                    {profile.headline && (
-                      <p>
-                        {profile.headline}
-                        {profile.location ? ` · ${profile.location}` : ""}
-                      </p>
-                    )}
-                  </div>
-                  <button className="secondary" onClick={onEditProfile}>
-                    Edit my profile
-                  </button>
-                </section>
-              )}
-              <div className="stats">
-                {[
-                  {
-                    label: "People in your network",
-                    value: data.people.length,
-                    icon: Users,
-                    detail: "Relationships worth remembering",
-                  },
-                  {
-                    label: "Companies & communities",
-                    value: data.organizations.filter((o) => o.kind !== "Event")
-                      .length,
-                    icon: Building2,
-                    detail: "A wider world of access",
-                  },
-                  {
-                    label: "Open opportunities",
-                    value: data.opportunities.filter(
-                      (o) => !["Won", "Lost"].includes(o.status),
-                    ).length,
-                    icon: Sparkles,
-                    detail: "Possibilities to explore",
-                  },
-                  {
-                    label: "Follow-ups to make",
-                    value: followups.length,
-                    icon: CalendarDays,
-                    detail: "Keep the conversation going",
-                  },
-                ].map((s) => (
-                  <div className="stat" key={s.label}>
-                    <div>
-                      <span>{s.label}</span>
-                      <s.icon size={17} />
-                    </div>
-                    <strong>{s.value}</strong>
-                    <small>{s.detail}</small>
-                  </div>
-                ))}
-              </div>
-              <ContextCoach
-                people={data.people}
-                onEdit={setEditPerson}
-                onImport={() => setImporting(true)}
-              />
-              <div className="home-grid">
-                <div>
-                  <Assistant
-                    onAction={(person, goal) => setNextAction({ person, goal })}
-                    prompts={
-                      profile?.goal
-                        ? [profile.goal, ...focus.prompts]
-                        : focus.prompts
-                    }
-                    data={data}
-                    mode={mode}
-                    allowAI={allowAI}
-                    privateNotes={privateNotes}
-                    onSave={(o) => setEditOpp(o)}
-                    onPerson={openPerson}
-                  />
-                  <section className="recent">
-                    <SectionTitle
-                      title="People to keep close"
-                      description="The context behind your connections."
-                      action={
-                        <button
-                          className="text-link"
-                          onClick={() => setTab("People")}
-                        >
-                          View everyone <ArrowRight size={14} />
-                        </button>
-                      }
-                    />
-                    <div className="contact-grid">
-                      {data.people.slice(0, 4).map((p) => (
-                        <ContactCard
-                          key={p.id}
-                          person={p}
-                          onClick={() => openPerson(p.id)}
-                        />
-                      ))}
-                    </div>
-                  </section>
-                </div>
-                <aside className="home-aside">
-                  <section className="panel opportunity-highlight">
-                    <div className="eyebrow">
-                      <Sparkles size={13} /> A CONNECTION TO EXPLORE
-                    </div>
-                    <h3>Your customer could be your next supplier.</h3>
-                    <p>
-                      {mode === "demo"
-                        ? "Maya’s saved profile includes event printing. Daniel has a stated conference need."
-                        : "Review the services your customers sell. A saved capability might solve your next need."}
-                    </p>
-                    {mode === "demo" && (
-                      <div className="mini-connection">
-                        <Avatar name="Maya Thompson" />
-                        <span className="dots-line" />
-                        <Avatar name="Daniel Okoro" />
-                      </div>
-                    )}
-                    <Badge tone="amber">Possible match · verify first</Badge>
-                    <button
-                      className="text-link"
-                      onClick={() => {
-                        setTab("People");
-                        setFilter("Customers");
-                      }}
-                    >
-                      Explore your customers <ArrowUpRight size={14} />
-                    </button>
-                    <small>
-                      {mode === "demo"
-                        ? "Fictional demo example. No fee or budget agreed."
-                        : "A capability is a starting point. Verify demand, capacity and budget."}
-                    </small>
-                  </section>
-                  <section className="panel" id="followups">
-                    <SectionTitle
-                      title="Keep things moving"
-                      action={
-                        <button
-                          className="icon"
-                          aria-label="Add follow-up"
-                          onClick={() => setDialog("followup")}
-                        >
-                          <Plus size={17} />
-                        </button>
-                      }
-                    />
-                    {followups.slice(0, 5).map((f) => (
-                      <div className="followup" key={f.id}>
-                        <button
-                          className="check-button"
-                          aria-label={`Complete ${f.text}`}
-                          onClick={() =>
-                            store.run(async () => {
-                              if (f.activity) {
-                                const a = data.activities.find(
-                                  (a) => a.id === f.id,
-                                )!;
-                                await store.save("activities", {
-                                  ...a,
-                                  done: true,
-                                });
-                              } else {
-                                const o = data.opportunities.find(
-                                  (o) => o.id === f.id,
-                                )!;
-                                await store.save("opportunities", {
-                                  ...o,
-                                  follow_up: "",
-                                });
-                              }
-                            })
-                          }
-                        >
-                          <Check size={12} />
-                        </button>
-                        <button
-                          className="followup-text"
-                          onClick={() => {
-                            if (f.opp)
-                              setEditOpp(
-                                data.opportunities.find(
-                                  (o) => o.id === f.opp,
-                                ) || false,
-                              );
-                          }}
-                        >
-                          <strong>{f.text}</strong>
-                          <small>{f.date || "No date set"}</small>
-                        </button>
-                      </div>
-                    ))}
-                    {!followups.length && <Empty>No pending follow-ups.</Empty>}
-                  </section>
-                  <section className="privacy-card">
-                    <ShieldCheck size={20} />
-                    <div>
-                      <strong>Just for you</strong>
-                      <p>
-                        {mode === "demo"
-                          ? "Fictional demo data is saved in this browser."
-                          : "Your connected records are protected by owner-only policies."}
-                      </p>
-                    </div>
-                  </section>
-                </aside>
-              </div>
-            </>
+            <WalletHome
+              localOnly={mode === "demo"}
+              name={profile?.name || "there"}
+              people={data.people}
+              history={questionHistory(data.activities)}
+              followups={followups.length}
+              onPerson={openPerson}
+              onAdd={() => setEditPerson(blankPerson())}
+              onImport={() => setImporting(true)}
+              onAsk={() => {
+                setQuestionRequest(null);
+                setTab("Ask My network");
+              }}
+              onLayer={(layer) => {
+                setContactLayer(layer);
+                setFilter("All people");
+                setSearch("");
+                setTab("Contacts");
+              }}
+              onQuestion={(question) => {
+                setQuestionRequest({ id: uid(), question });
+                setTab("Ask My network");
+              }}
+              onFollowups={() => setShowFollowups(true)}
+            />
           )}
-          {tab === "People" && (
+          <div hidden={tab !== "Ask My network"}>
+            <div className="page-heading">
+              <div>
+                <div className="eyebrow">PUT YOUR CONNECTIONS TO WORK</div>
+                <h1>Ask My network</h1>
+                <p>Who can help with your next move? Start with a question.</p>
+              </div>
+            </div>
+            <Assistant
+              request={questionRequest}
+              onAnswered={async (question, answer) => {
+                await store.save(
+                  "activities",
+                  questionActivity(question, answer),
+                );
+              }}
+              onAction={(person, goal) => setNextAction({ person, goal })}
+              prompts={
+                profile?.goal ? [profile.goal, ...focus.prompts] : focus.prompts
+              }
+              data={data}
+              mode={mode}
+              allowAI={allowAI}
+              privateNotes={privateNotes}
+              onSave={(o) => setEditOpp(o)}
+              onPerson={openPerson}
+            />
+          </div>
+          {["Contacts", "Network", "Opportunities"].includes(tab) && (
+            <nav className="contact-tools" aria-label="Contact tools">
+              {["Contacts", "Network", "Opportunities"].map((item) => (
+                <button
+                  key={item}
+                  aria-pressed={tab === item}
+                  onClick={() => setTab(item)}
+                >
+                  {item}
+                </button>
+              ))}
+            </nav>
+          )}
+          {tab === "Contacts" && (
             <>
               <div className="page-heading">
                 <div>
                   <div className="eyebrow">
                     CONTEXT MAKES CONNECTIONS USEFUL
                   </div>
-                  <h1>Your people</h1>
+                  <h1>Your contacts</h1>
                   <p>
                     Customers, collaborators, friends — often more than one.
                   </p>
@@ -765,6 +606,24 @@ export default function Workspace({
                     Add person
                   </button>
                 </div>
+              </div>
+              <div className="ledger-filters" aria-label="Contact layer">
+                {(
+                  [
+                    "All contacts",
+                    "Founders",
+                    "Skilled workers",
+                    "Needs context",
+                  ] as ContactLayer[]
+                ).map((layer) => (
+                  <button
+                    key={layer}
+                    aria-pressed={contactLayer === layer}
+                    onClick={() => setContactLayer(layer)}
+                  >
+                    {layer}
+                  </button>
+                ))}
               </div>
               <div className="toolbar">
                 <div className="search">
@@ -1156,7 +1015,7 @@ export default function Workspace({
               )}
             </>
           )}
-          {tab === "Settings" && (
+          {tab === "Profile" && (
             <>
               <div className="page-heading">
                 <div>
@@ -1165,6 +1024,36 @@ export default function Workspace({
                   <p>Your data, your permissions, your pace.</p>
                 </div>
               </div>
+              {profile && (
+                <section className="profile-focus">
+                  <Avatar name={profile.name} size="large" />
+                  <div>
+                    <h2>{profile.name}</h2>
+                    <p>
+                      {profile.role}
+                      {profile.location ? ` · ${profile.location}` : ""}
+                    </p>
+                    <p>{profile.headline}</p>
+                    <p>
+                      <b>Your next move:</b> {profile.goal}
+                    </p>
+                    <p>
+                      <b>You offer:</b> {profile.offers || "Not added yet"}
+                    </p>
+                    <p>
+                      <b>You need:</b> {profile.needs || "Not added yet"}
+                    </p>
+                  </div>
+                  <button className="secondary" onClick={onEditProfile}>
+                    Edit my profile
+                  </button>
+                </section>
+              )}
+              <ContextCoach
+                people={data.people}
+                onEdit={setEditPerson}
+                onImport={() => setImporting(true)}
+              />
               <div className="settings-grid">
                 <section className="panel">
                   <SectionTitle title="Account" />
@@ -1178,70 +1067,22 @@ export default function Workspace({
                       ? "Explore with fictional data. Demo storage is not an authenticated private vault."
                       : store.email}
                   </p>
-                  {mode === "live" ? (
-                    <button className="secondary" onClick={() => auth("out")}>
-                      <LogOut size={15} />
-                      Sign out
+                  {onExit && (
+                    <button className="secondary" onClick={onExit}>
+                      {mode === "demo" ? "Leave demo to sign in" : "Sign out"}
                     </button>
-                  ) : (
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        auth("signin");
-                      }}
-                    >
-                      <Field label="Email">
-                        <input
-                          required
-                          type="email"
-                          value={authEmail}
-                          onChange={(e) => setAuthEmail(e.target.value)}
-                        />
-                      </Field>
-                      <Field label="Password">
-                        <input
-                          required
-                          type="password"
-                          minLength={8}
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                        />
-                      </Field>
-                      <div className="two-buttons">
-                        <button
-                          className="primary"
-                          disabled={busy || !configured()}
-                        >
-                          Sign in
-                        </button>
-                        <button
-                          type="button"
-                          className="secondary"
-                          disabled={
-                            busy ||
-                            !configured() ||
-                            password.length < 8 ||
-                            !authEmail
-                          }
-                          onClick={() => auth("signup")}
-                        >
-                          Create account
-                        </button>
-                      </div>
-                    </form>
                   )}
-                  {authMessage && <p className="notice">{authMessage}</p>}
                   <button
                     className="secondary wide"
-                    disabled={!configured()}
-                    onClick={() => auth("google")}
+                    disabled={!configured() || mode !== "live"}
+                    onClick={() => void connectGoogleContacts()}
                   >
                     Connect Google with Contacts permission
                   </button>
                   {!configured() && (
                     <p className="small muted">
-                      Connected mode needs the Supabase variables in .env.local.
-                      See README.
+                      Google account connections are not available yet. You can
+                      keep exploring the demo.
                     </p>
                   )}
                 </section>
@@ -1379,7 +1220,13 @@ export default function Workspace({
       <nav className="bottom-nav">
         {nav.map((n) => (
           <button
-            className={tab === n.name ? "active" : ""}
+            className={
+              tab === n.name ||
+              (n.name === "Contacts" &&
+                ["Network", "Opportunities"].includes(tab))
+                ? "active"
+                : ""
+            }
             key={n.name}
             onClick={() => {
               setTab(n.name);
@@ -1388,10 +1235,71 @@ export default function Workspace({
             }}
           >
             <n.icon size={21} />
-            <span>{n.name === "Settings" ? "Profile" : n.name}</span>
+            <span>{n.name === "Profile" ? "Profile" : n.name}</span>
           </button>
         ))}
       </nav>
+      {showFollowups && (
+        <Modal title="Your follow-ups" onClose={() => setShowFollowups(false)}>
+          {" "}
+          <section className="panel" id="followups">
+            <SectionTitle
+              title="Keep things moving"
+              action={
+                <button
+                  className="icon"
+                  aria-label="Add follow-up"
+                  onClick={() => setDialog("followup")}
+                >
+                  <Plus size={17} />
+                </button>
+              }
+            />
+            {followups.slice(0, 5).map((f) => (
+              <div className="followup" key={f.id}>
+                <button
+                  className="check-button"
+                  aria-label={`Complete ${f.text}`}
+                  onClick={() =>
+                    store.run(async () => {
+                      if (f.activity) {
+                        const a = data.activities.find((a) => a.id === f.id)!;
+                        await store.save("activities", {
+                          ...a,
+                          done: true,
+                        });
+                      } else {
+                        const o = data.opportunities.find(
+                          (o) => o.id === f.id,
+                        )!;
+                        await store.save("opportunities", {
+                          ...o,
+                          follow_up: "",
+                        });
+                      }
+                    })
+                  }
+                >
+                  <Check size={12} />
+                </button>
+                <button
+                  className="followup-text"
+                  onClick={() => {
+                    if (f.opp)
+                      setEditOpp(
+                        data.opportunities.find((o) => o.id === f.opp) || false,
+                      );
+                  }}
+                >
+                  <strong>{f.text}</strong>
+                  <small>{f.date || "No date set"}</small>
+                </button>
+              </div>
+            ))}
+            {!followups.length && <Empty>No pending follow-ups.</Empty>}
+          </section>
+        </Modal>
+      )}
       {p && (
         <Modal title="Relationship profile" onClose={() => setPerson(null)}>
           <div className="profile-head">

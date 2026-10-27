@@ -1,0 +1,15 @@
+BEGIN:VCARD
+VERSION:3.0
+FN:Nia Campbell
+N:Campbell;Nia;;;
+EMAIL:nia@example.test
+TEL:+447700900123
+TITLE:Founder
+URL:https://example.com
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+FN:Tunde Adewale
+N:Adewale;Tunde;;;
+EMAIL:tunde@example.test
+END:VCARD

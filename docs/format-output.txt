@@ -1,0 +1,43 @@
+app/api/assistant/route.ts 120ms
+app/api/data/[table]/route.ts 20ms
+app/api/enrich/route.ts 7ms
+app/api/google-contacts/route.ts 7ms
+app/error.tsx 6ms
+app/globals.css 186ms
+app/layout.tsx 4ms
+app/page.tsx 2ms
+components/assistant.tsx 35ms
+components/forms.tsx 28ms
+components/import-wizard.tsx 23ms
+components/ui.tsx 9ms
+components/workspace.tsx 137ms
+lib/demo.ts 20ms
+lib/import.ts 11ms
+lib/intelligence.ts 20ms
+lib/server.ts 5ms
+lib/store.ts 16ms
+lib/supabase.ts 5ms
+lib/types.ts 12ms
+lib/validation.ts 10ms
+tests/core.test.ts 12ms
+tests/rls.test.ts 8ms
+tests/routes.test.ts 5ms
+scripts/dev.mjs 20ms
+scripts/generate-seed.ts 2ms
+scripts/seed.ts 3ms
+next-env.d.ts 2ms (unchanged)
+next.config.ts 2ms
+package-lock.json 27ms (unchanged)
+package.json 1ms (unchanged)
+postcss.config.mjs 2ms
+tsconfig.json 1ms
+vite.preview.config.ts 3ms
+preview/index.html 22ms
+preview/main.tsx 1ms
+preview/mobile.html 18ms
+preview/package.json 2ms
+CODEX_HANDOFF.md 92ms (unchanged)
+README.md 37ms (unchanged)
+docs/FEATURE_CHECKLIST.md 28ms
+docs/TEST_RESULTS.md 10ms (unchanged)
+docs/WALKTHROUGH.md 4ms (unchanged)

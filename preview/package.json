@@ -1,0 +1,6 @@
+{
+  "private": true,
+  "scripts": {
+    "dev": "node ../node_modules/vite/bin/vite.js --config ../vite.preview.config.ts"
+  }
+}

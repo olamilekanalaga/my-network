@@ -1,0 +1,30 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> network-intelligence@0.1.0 test
+> node --import tsx --test tests/*.test.ts
+
+✔ CSV supports quoted commas, selective records and Google-style headers (3.527411ms)
+✔ VCF unfolds lines and decodes escaped values (0.443873ms)
+✔ invalid file formats and excessive imports fail clearly (1.949979ms)
+✔ duplicate matches email, normalized phone and name; merge preserves existing facts (1.137794ms)
+✔ all demo records validate against production schemas (15.891986ms)
+✔ multi-category customer can be retrieved as a printing supplier (3.022929ms)
+✔ reciprocal customer query uses customer directory (0.702904ms)
+✔ unsupported question returns no invented contact (0.74011ms)
+✔ pending facts and private notes are excluded from external AI context by default choice (1.085498ms)
+✔ graph query uses documented edges and never treats co-attendance as a personal relationship (0.47631ms)
+✔ coalition retrieval finds complementary recorded UK fintech and Nigerian capabilities (1.169602ms)
+✔ deletion removes private data and references while preserving opportunity history (0.613403ms)
+✔ validation rejects invalid pipeline, negative fee, empty name and self edge (2.5345ms)
+✔ real PostgreSQL migration: owner RLS, cross-owner links, graph, cleanup and fee constraints (1599.449286ms)
+✔ private API routes reject requests without authentication before using external services (8.258203ms)
+✔ unknown tables never become dynamic arbitrary SQL access (0.507927ms)
+✔ request boundaries reject oversized and malformed JSON (1.272543ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 17
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2014.695287

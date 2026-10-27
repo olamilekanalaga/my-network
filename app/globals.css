@@ -2984,3 +2984,236 @@ a {
   border-radius: 8px;
   box-shadow: 0 0 0 5px #e6efd4;
 }
+
+/* Tactile surfaces and purposeful motion across the product. */
+:root {
+  --surface-shadow: 0 3px 0 #26342120, 0 12px 28px -18px #25351b55;
+  --surface-shadow-raised: 0 5px 0 #26342128, 0 18px 35px -18px #25351b66;
+  --move-ease: cubic-bezier(0.2, 0.75, 0.25, 1);
+}
+@keyframes surface-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes content-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.entry-signin,
+.entry-main .goal-panel,
+.self-profile,
+.network-balance,
+.wallet-ledger,
+.panel,
+.assistant,
+.context-coach,
+.profile-focus,
+.contact-card,
+.wallet-layers > button {
+  box-shadow: var(--surface-shadow);
+  transition:
+    transform 220ms var(--move-ease),
+    box-shadow 220ms var(--move-ease),
+    border-color 180ms ease;
+  animation: surface-arrive 420ms var(--move-ease) backwards;
+}
+.entry-signin,
+.entry-main .goal-panel,
+.self-profile {
+  border: 1.5px solid #526044;
+  border-radius: 23px;
+  box-shadow:
+    5px 6px 0 #c7cfb9,
+    0 18px 35px -25px #25351b70;
+}
+.network-balance {
+  box-shadow:
+    0 5px 0 #b9c9a2,
+    0 20px 35px -22px #25351b80;
+}
+.wallet-layers > button:nth-child(2) {
+  animation-delay: 45ms;
+}
+.wallet-layers > button:nth-child(3) {
+  animation-delay: 90ms;
+}
+.wallet-ledger {
+  animation-delay: 80ms;
+}
+.role-questions {
+  animation: content-arrive 240ms var(--move-ease) backwards;
+}
+.role-card .field {
+  margin-top: 22px;
+}
+.role-card select {
+  cursor: pointer;
+  font-size: 17px;
+  font-weight: 650;
+  min-height: 55px;
+  color: #20291f;
+  background: #fffef8;
+  border: 1.5px solid #879875;
+  border-radius: 13px;
+  padding: 12px 16px;
+  box-shadow: 0 2px 0 #a9b79730;
+}
+.role-card textarea,
+.role-card input {
+  background: #fffef8;
+  border-color: #bbc5ae;
+}
+.role-card .wide {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  min-height: 50px;
+  margin-top: 24px;
+}
+.step-back {
+  margin-bottom: 25px;
+  display: inline-block;
+}
+.primary,
+.secondary,
+.send,
+.wallet-actions > button > span,
+.ledger-filters button,
+.contact-tools button,
+.sidebar nav button,
+.bottom-nav button {
+  transition:
+    transform 160ms var(--move-ease),
+    box-shadow 160ms var(--move-ease),
+    background-color 160ms ease,
+    color 160ms ease;
+}
+.primary {
+  box-shadow: 3px 3px 0 #20291f;
+  border-radius: 12px;
+}
+.secondary {
+  box-shadow: 0 2px 0 #26342118;
+}
+.primary:active,
+.secondary:active,
+.send:active {
+  transform: translate(1px, 2px) scale(0.99);
+  box-shadow: 0 0 0 transparent;
+}
+.wallet-actions > button:active > span {
+  transform: scale(0.92);
+  box-shadow: 0 0 0 transparent;
+}
+.asset-row,
+.question-row {
+  transition:
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+.asset-row:active,
+.question-row:active {
+  background: #e9efd9;
+}
+.modal {
+  animation: surface-arrive 240ms var(--move-ease) backwards;
+  box-shadow: 0 24px 80px #18231540;
+}
+.field input,
+.field textarea,
+.field select {
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+.field input:focus,
+.field textarea:focus,
+.field select:focus {
+  border-color: #678746;
+  box-shadow: 0 0 0 3px #b6d58c30;
+}
+.self-profile .form-grid {
+  gap: 18px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .entry-signin:hover,
+  .entry-main .goal-panel:hover,
+  .self-profile:hover,
+  .network-balance:hover,
+  .wallet-ledger:hover,
+  .panel:hover,
+  .assistant:hover,
+  .context-coach:hover,
+  .profile-focus:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--surface-shadow-raised);
+  }
+  .contact-card:hover,
+  .wallet-layers > button:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--surface-shadow-raised);
+  }
+  .primary:hover:not(:disabled),
+  .secondary:hover:not(:disabled) {
+    transform: translateY(-2px);
+  }
+  .wallet-actions > button:hover > span {
+    transform: translateY(-4px);
+    box-shadow: 0 5px 0 #26342125;
+  }
+  .asset-row:hover,
+  .question-row:hover {
+    background: #eff3e6;
+  }
+}
+@media (max-width: 640px) {
+  .self-profile .form-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .role-card select {
+    font-size: 16px;
+  }
+  .entry-main .role-card {
+    padding: 24px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .entry-signin:hover,
+  .entry-main .goal-panel:hover,
+  .self-profile:hover,
+  .network-balance:hover,
+  .wallet-ledger:hover,
+  .panel:hover,
+  .assistant:hover,
+  .context-coach:hover,
+  .profile-focus:hover,
+  .contact-card:hover,
+  .wallet-layers > button:hover,
+  .wallet-actions > button:hover > span,
+  .primary:hover,
+  .secondary:hover {
+    transform: none !important;
+  }
+}

@@ -1,4 +1,4 @@
-export const goals = {
+const existingGoals = {
   "Business developer": {
     title: "Your next deal starts with a hello.",
     detail:
@@ -46,6 +46,31 @@ export const goals = {
       "Who has connections in marketing?",
       "Who can help with business introductions?",
     ],
+  },
+} as const;
+export const goals = {
+  ...existingGoals,
+  Founder: {
+    ...existingGoals["Business owner"],
+    title: "Build something. Find your people.",
+    detail:
+      "Meet collaborators, find support, and give your next idea room to grow.",
+  },
+  Agency: {
+    ...existingGoals["Business developer"],
+    title: "Good work starts with good people.",
+    detail: "Find clients, collaborators, and talent for whatever comes next.",
+  },
+  "Skilled worker / Talent": {
+    ...existingGoals["Job seeker"],
+    title: "Your skills. Your next big move.",
+    detail:
+      "Meet people who need what you do. Turn your talent into real connections.",
+  },
+  Other: {
+    ...existingGoals["Business owner"],
+    title: "There’s a place for you here.",
+    detail: "Bring what you do. Discover who you can build something with.",
   },
 } as const;
 export type Goal = keyof typeof goals;

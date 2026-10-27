@@ -1033,6 +1033,14 @@ export default function Workspace({
                       {profile.role}
                       {profile.location ? ` · ${profile.location}` : ""}
                     </p>
+                    {profile.companyName && (
+                      <p>
+                        <b>{profile.companyName}</b>
+                      </p>
+                    )}
+                    {profile.roleDescription && (
+                      <p>{profile.roleDescription}</p>
+                    )}
                     <p>{profile.headline}</p>
                     <p>
                       <b>Your next move:</b> {profile.goal}

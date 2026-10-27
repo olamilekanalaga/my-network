@@ -21,7 +21,6 @@ import {
 import { Avatar, Empty } from "./ui";
 export default function WalletHome({
   name,
-  photo,
   localOnly,
   people,
   history,
@@ -35,7 +34,6 @@ export default function WalletHome({
   onFollowups,
 }: {
   name: string;
-  photo?: string;
   localOnly: boolean;
   people: Person[];
   history: QuestionHistory[];
@@ -64,14 +62,11 @@ export default function WalletHome({
     <div className="wallet-home">
       <div className="wallet-greeting">
         <div>
-          <div className="eyebrow">YOUR PEOPLE. YOUR POSSIBILITIES.</div>
           <h1>
             Hey, {name.split(" ")[0] || "there"}
             <span className="greeting-dot">.</span>
           </h1>
-          <p>Your network, all in one place.</p>
         </div>
-        <Avatar name={name} photo={photo} size="large" />
       </div>
       <section className="network-balance" aria-label="Network overview">
         <div className="balance-top">

@@ -484,7 +484,6 @@ export default function Workspace({
             </button>
             <Avatar
               name={profile?.name || "Your Workspace"}
-              photo={profile?.photo}
             />
           </div>
         </header>

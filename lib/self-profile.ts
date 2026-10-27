@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { themeIds } from "./themes";
 import { photoSchema, profileLinksSchema } from "./profile-media";
 export const entryModeKey = "network-entry-mode";
 export const demoProfileKey = "network-self-profile-demo-v1";
@@ -37,45 +38,34 @@ export const roleFields = {
     placeholder: "In your own words—there’s room for everyone here",
   },
 } as const;
-export const roleStepSchema = z
-  .object({
-    role: z.enum(profileRoles),
-    roleDescription: z
-      .string()
-      .trim()
-      .min(1, "Tell us a little about what you do.")
-      .max(2000),
-    companyName: z.string().trim().max(150).default(""),
-  })
-  .superRefine((p, ctx) => {
-    if ((p.role === "Founder" || p.role === "Business owner") && !p.companyName)
-      ctx.addIssue({
-        code: "custom",
-        path: ["companyName"],
-        message: "Add your company or business name.",
-      });
-  });
-export const selfProfileSchema = z.object({
-  name: z.string().trim().min(1, "Add your name.").max(100),
-  displayName: z.string().trim().max(100).default(""),
-  workCompany: z.string().trim().max(150).default(""),
-  role: z.enum(profileRoles),
+export const roleStepSchema = z.object({
+  role: z.enum(["", ...profileRoles]),
   roleDescription: z.string().trim().max(2000).default(""),
   companyName: z.string().trim().max(150).default(""),
+});
+export const selfProfileSchema = z.object({
+  name: z.string().trim().max(100),
+  displayName: z.string().trim().max(100).default(""),
+  workCompany: z.string().trim().max(150).default(""),
+  role: z.enum(["", ...profileRoles]),
+  roleDescription: z.string().trim().max(2000).default(""),
+  companyName: z.string().trim().max(150).default(""),
+  theme: z.enum(themeIds).default("lime"),
   photo: photoSchema.default(""),
   links: profileLinksSchema.max(10).default([]),
   headline: z.string().trim().max(150),
   location: z.string().trim().max(120),
   offers: z.string().trim().max(2000),
   needs: z.string().trim().max(2000),
-  goal: z.string().trim().min(1, "Tell us what you want to achieve.").max(1000),
+  goal: z.string().trim().max(1000),
 });
 export type SelfProfile = z.infer<typeof selfProfileSchema>;
 export const blankSelfProfile = (): SelfProfile => ({
   name: "",
   displayName: "",
   workCompany: "",
-  role: "Business owner",
+  role: "",
+  theme: "lime",
   roleDescription: "",
   companyName: "",
   photo: "",
@@ -92,12 +82,13 @@ export function readSelfProfile(value: unknown): SelfProfile | null {
 }
 
 export const roleDraftSchema = z.object({
-  role: z.enum(profileRoles),
+  role: z.enum(["", ...profileRoles]),
   roleDescription: z.string().max(2000),
   companyName: z.string().max(150).default(""),
 });
 export function mergeDemoProfile(input: SelfProfile): SelfProfile {
   const defaultDetails: Record<SelfProfile["role"], string> = {
+    "": "Creative projects and community building",
     "Business owner": "I run a small creative business.",
     Founder: "I’m building tools that help small businesses grow.",
     Agency: "Marketing and content creation",
@@ -107,6 +98,7 @@ export function mergeDemoProfile(input: SelfProfile): SelfProfile {
   };
   const defaults: SelfProfile = {
     name: "Alex Morgan",
+    theme: input.theme,
     displayName: "⭕️La_Crrypt💰₿",
     workCompany: input.companyName.trim() || "Studio North",
     role: input.role,
@@ -133,7 +125,8 @@ export function mergeDemoProfile(input: SelfProfile): SelfProfile {
   };
   const merged = { ...defaults };
   for (const key of Object.keys(defaults) as (keyof SelfProfile)[])
-    if (key === "links") merged.links = input.links;
+    if (key === "theme") merged.theme = input.theme;
+    else if (key === "links") merged.links = input.links;
     else if (key !== "role" && input[key].trim())
       merged[key] = input[key].trim();
   return selfProfileSchema.parse(merged);

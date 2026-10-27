@@ -83,3 +83,15 @@ Added optional `displayName` and `workCompany` fields to the existing self-profi
 A bundled fictional SVG avatar and the display name `⭕️La_Crrypt💰₿` provide the default demo identity. Existing untouched Alex Morgan demo profiles get that presentation; custom names, display names, uploaded photos, employers, and roles are preserved. The avatar validator permits this single bundled SVG path while continuing to reject user-supplied SVG data URLs and arbitrary local paths.
 
 Validation: production build and TypeScript passed. Browser checks passed for default demo portrait/name, card layout without prior report copy/coaching, collapsed settings, direct editing, saved display name/company/role/social buttons, reload persistence, mobile overflow, and browser runtime errors.
+
+## Optional profiles, social dropdowns, notifications, and five themes
+
+All personal-profile fields, including role, role detail, company, name, and goal, now permit empty values in both demo and authenticated modes. Saving profile edits preserves empty values instead of merging demo defaults back in. Enter demo now still provides the optional fictional starting profile. Blank saved profiles show neutral placeholders; contacts retain their existing name requirement.
+
+Website/social editing is a collapsed section with add/remove rows, a platform dropdown, and a URL input. Platform choices include Website, LinkedIn, X, Instagram, GitHub, Facebook, TikTok, YouTube, and Other. Platform handles can be expanded into URLs; empty rows are discarded on save. Existing saved links remain editable. The notification bell is removed from the top bar and placed beside Ask my network in Home quick actions, with the existing follow-up count and dialog behavior.
+
+Profile now offers Lime, Lilac, Ocean, Sunset, and Midnight themes. Selection updates global surface/text/accent/border tokens across onboarding, Home, Contacts, Ask, Profile, dialogs, and forms. The choice is cached locally for startup and saved with the self-profile, including the existing authenticated metadata path. Local application remains usable if account synchronization fails, with explicit feedback. Theme IDs are validated; no credential or network settings change is required.
+
+Validation: 39 automated tests, TypeScript, and production build passed. Browser checks covered completely empty saved profiles, no automatic refill, social dropdown/platform/handle/empty-row behavior, relocated notifications, five distinct theme palettes, saved selection across reload/editing, all four workspace views, mobile overflow, and browser runtime errors.
+
+Final Midnight visual checks also passed; sampled prompt and answer text measured at least 11.48:1 contrast after replacing remaining hard-coded colors. Empty profile avatars use a neutral user icon, and the cover motif follows the selected theme accent.

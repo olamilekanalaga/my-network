@@ -9,6 +9,8 @@ import {
   Github,
   Linkedin,
   Instagram,
+  Asterisk,
+  UserRound,
 } from "lucide-react";
 import type { SelfProfile } from "@/lib/self-profile";
 import { Avatar } from "./ui";
@@ -44,15 +46,23 @@ export default function SelfProfileCard({
       <div className="identity-cover" aria-hidden="true">
         <span className="cover-orbit orbit-one" />
         <span className="cover-orbit orbit-two" />
-        <span className="cover-symbol">✳</span>
+        <span className="cover-symbol">
+          <Asterisk />
+        </span>
       </div>
       <div className="identity-body">
         <div className="identity-toolbar">
-          <Avatar
-            name={profile.displayName || profile.name}
-            photo={profile.photo}
-            size="large"
-          />
+          {!profile.name && !profile.displayName && !profile.photo ? (
+            <span className="avatar large identity-empty">
+              <UserRound size={36} />
+            </span>
+          ) : (
+            <Avatar
+              name={profile.displayName || profile.name || "Your profile"}
+              photo={profile.photo}
+              size="large"
+            />
+          )}
           {onEdit && (
             <button
               className="secondary identity-edit"
@@ -64,7 +74,9 @@ export default function SelfProfileCard({
             </button>
           )}
         </div>
-        <h1 className="identity-name">{profile.displayName || profile.name}</h1>
+        <h1 className="identity-name">
+          {profile.displayName || profile.name || "Your profile"}
+        </h1>
         <div className="identity-work">
           <div className="identity-detail">
             <span className="identity-icon">

@@ -1,6 +1,6 @@
 "use client";
-import { useState, useId } from "react";
-import { Camera, X } from "lucide-react";
+import { useState } from "react";
+import { Camera, X, ChevronDown, Plus } from "lucide-react";
 import { Avatar, Field } from "./ui";
 async function preparePhoto(file: File): Promise<string> {
   if (!["image/jpeg", "image/png", "image/webp"].includes(file.type))
@@ -116,6 +116,34 @@ export function PhotoPicker({
     </div>
   );
 }
+
+const linkTypes = [
+  { name: "Website", prefix: "https://" },
+  { name: "LinkedIn", prefix: "https://linkedin.com/in/" },
+  { name: "X", prefix: "https://x.com/" },
+  { name: "Instagram", prefix: "https://instagram.com/" },
+  { name: "GitHub", prefix: "https://github.com/" },
+  { name: "Facebook", prefix: "https://facebook.com/" },
+  { name: "TikTok", prefix: "https://tiktok.com/@" },
+  { name: "YouTube", prefix: "https://youtube.com/@" },
+  { name: "Other", prefix: "https://" },
+];
+function linkType(value: string) {
+  try {
+    const host = new URL(value.startsWith("http") ? value : `https://${value}`)
+      .hostname;
+    return (
+      linkTypes.find(
+        (t) =>
+          t.name !== "Website" &&
+          t.name !== "Other" &&
+          new URL(t.prefix).hostname === host.replace(/^www\./, ""),
+      )?.name || "Website"
+    );
+  } catch {
+    return "Website";
+  }
+}
 export function ProfileLinks({
   value,
   onChange,
@@ -123,22 +151,86 @@ export function ProfileLinks({
   value: string[];
   onChange: (links: string[]) => void;
 }) {
-  const hintId = useId();
+  const [types, setTypes] = useState<Record<number, string>>({});
   return (
-    <>
-      <Field label="Website or social links (optional)">
-        <textarea
-          aria-describedby={hintId}
-          rows={3}
-          placeholder={"linkedin.com/in/your-name\nyour-website.com"}
-          value={value.join("\n")}
-          onChange={(e) => onChange(e.target.value.split("\n"))}
-        />
-      </Field>
-      <p className="small muted" id={hintId}>
-        One link per line. Add a portfolio, website, LinkedIn, or another
-        profile—only if useful.
-      </p>
-    </>
+    <details className="links-dropdown">
+      <summary>
+        Website or social links{" "}
+        <span>
+          Optional
+          {value.filter((v) => v.trim()).length
+            ? ` · ${value.filter((v) => v.trim()).length}`
+            : ""}
+        </span>
+        <ChevronDown size={16} />
+      </summary>
+      <div className="links-editor">
+        {value.map((url, index) => {
+          const selected = types[index] || linkType(url);
+          const config = linkTypes.find((t) => t.name === selected)!;
+          function update(next: string) {
+            onChange(value.map((v, i) => (i === index ? next : v)));
+          }
+          return (
+            <div className="link-editor-row" key={index}>
+              <Field label={`Link type ${index + 1}`}>
+                <select
+                  value={selected}
+                  onChange={(e) =>
+                    setTypes((t) => ({ ...t, [index]: e.target.value }))
+                  }
+                >
+                  {linkTypes.map((type) => (
+                    <option key={type.name}>{type.name}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label={`Link URL ${index + 1}`}>
+                <input
+                  type="text"
+                  inputMode="url"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  placeholder={
+                    config.prefix +
+                    (selected === "Website" ? "your-website.com" : "your-name")
+                  }
+                  value={url}
+                  onChange={(e) => update(e.target.value)}
+                  onBlur={() => {
+                    if (
+                      url.trim() &&
+                      !/[.:/]/.test(url) &&
+                      !["Website", "Other"].includes(selected)
+                    )
+                      update(config.prefix + url.trim().replace(/^@/, ""));
+                  }}
+                />
+              </Field>
+              <button
+                type="button"
+                className="icon"
+                aria-label={`Remove link ${index + 1}`}
+                onClick={() => {
+                  onChange(value.filter((_, i) => i !== index));
+                  setTypes({});
+                }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+          );
+        })}
+        <button
+          type="button"
+          className="secondary"
+          disabled={value.length >= 10}
+          onClick={() => onChange([...value, ""])}
+        >
+          <Plus size={15} />
+          Add link
+        </button>
+      </div>
+    </details>
   );
 }

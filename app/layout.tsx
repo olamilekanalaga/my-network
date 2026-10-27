@@ -6,8 +6,15 @@ export const metadata = {
 };
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <body>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var t=localStorage.getItem('network-theme-v1');if(['lime','lilac','ocean','sunset','midnight'].includes(t))document.documentElement.dataset.theme=t;}catch(e){}`,
+          }}
+        />
+        {children}
+      </body>
     </html>
   );
 }

@@ -59,6 +59,8 @@ import { PersonForm, OrganizationForm, OpportunityForm } from "./forms";
 import ImportWizard from "./import-wizard";
 import Assistant from "./assistant";
 import SelfProfileCard from "./self-profile-card";
+import ThemePicker from "./theme-picker";
+import { applyTheme, type ThemeId } from "@/lib/themes";
 import WalletHome from "./wallet-home";
 import {
   inContactLayer,
@@ -87,10 +89,12 @@ export default function Workspace({
   profile,
   onEditProfile,
   onExit,
+  onThemeChange,
 }: {
   profile?: SelfProfile;
   onEditProfile?: () => void;
   onExit?: () => void;
+  onThemeChange?: (theme: ThemeId) => Promise<void>;
 }) {
   const store = useStore();
   const [contactLayer, setContactLayer] =
@@ -472,16 +476,6 @@ export default function Workspace({
                 <LogOut size={18} />
               </button>
             )}
-            <button
-              className="icon notification"
-              aria-label="View follow-ups"
-              onClick={() => {
-                setShowFollowups(true);
-              }}
-            >
-              <Bell size={19} />
-              {followups.length > 0 && <i />}
-            </button>
             <Avatar
               name={profile?.name || "Your Workspace"}
               photo={profile?.photo}
@@ -1022,6 +1016,10 @@ export default function Workspace({
               {profile && (
                 <SelfProfileCard profile={profile} onEdit={onEditProfile} />
               )}
+              <ThemePicker
+                value={profile?.theme || "lime"}
+                onChange={onThemeChange || (async (theme) => applyTheme(theme))}
+              />
               <details className="profile-settings">
                 <summary>
                   <Settings size={17} /> Settings & privacy

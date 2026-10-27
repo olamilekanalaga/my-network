@@ -3518,3 +3518,622 @@ a {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+:root,
+[data-theme="lime"] {
+  --app-bg: #f6f5ed;
+  --surface: #fffef8;
+  --soft: #eeeee3;
+  --tint: #e9edda;
+  --accent: #d6fa69;
+  --accent-ink: #20291f;
+  --text: #20291f;
+  --subtext: #62665d;
+  --border: #cbd4bd;
+  --deep: #202d24;
+  --deep-text: #f3f8ea;
+  --secondary-surface: #eee8f7;
+  --secondary-text: #6a5284;
+}
+[data-theme="lilac"] {
+  --app-bg: #f6f1fb;
+  --surface: #fffcff;
+  --soft: #efe5f7;
+  --tint: #ebe0f8;
+  --accent: #d9b8ff;
+  --accent-ink: #30213f;
+  --text: #352741;
+  --subtext: #75677e;
+  --border: #d8c8e5;
+  --deep: #30213f;
+  --deep-text: #faf2ff;
+  --secondary-surface: #e8e3ff;
+  --secondary-text: #69569b;
+}
+[data-theme="ocean"] {
+  --app-bg: #edf5f8;
+  --surface: #faffff;
+  --soft: #e1edf3;
+  --tint: #dceff1;
+  --accent: #89e3ef;
+  --accent-ink: #143447;
+  --text: #173748;
+  --subtext: #5e7884;
+  --border: #b8d1db;
+  --deep: #143447;
+  --deep-text: #ebfaff;
+  --secondary-surface: #e1e8fa;
+  --secondary-text: #46658a;
+}
+[data-theme="sunset"] {
+  --app-bg: #fff4ea;
+  --surface: #fffcf7;
+  --soft: #f8e8da;
+  --tint: #ffead7;
+  --accent: #ffb77b;
+  --accent-ink: #4b302b;
+  --text: #513126;
+  --subtext: #8a6b5d;
+  --border: #dfc8b6;
+  --deep: #4b302b;
+  --deep-text: #fff5ea;
+  --secondary-surface: #f5dfe6;
+  --secondary-text: #96576d;
+}
+[data-theme="midnight"] {
+  --app-bg: #151921;
+  --surface: #202632;
+  --soft: #29313e;
+  --tint: #2d3542;
+  --accent: #c1b1ff;
+  --accent-ink: #151921;
+  --text: #edf0f7;
+  --subtext: #a6b2c6;
+  --border: #3d485b;
+  --deep: #0f1420;
+  --deep-text: #edf0ff;
+  --secondary-surface: #363147;
+  --secondary-text: #ddc9ff;
+}
+:root {
+  --bg: var(--app-bg);
+  --ink: var(--text);
+  --navy: var(--text);
+  --muted: var(--subtext);
+  --line: var(--border);
+  --blue: var(--text);
+}
+body,
+.app-shell,
+.main-shell,
+.entry-shell,
+.topbar,
+.entry-header {
+  background: var(--app-bg);
+  color: var(--text);
+}
+.sidebar {
+  background: var(--soft);
+  border-color: var(--border);
+}
+.brand,
+.sidebar-note h4,
+.wallet-layers strong,
+.stat strong,
+.page-heading h1,
+.identity-name,
+.wallet-empty h3,
+.section-title h2 {
+  color: var(--text);
+}
+.sidebar-note,
+.wallet-layers > button:nth-child(2),
+.ai-icon {
+  background: var(--secondary-surface);
+  color: var(--secondary-text);
+  border-color: var(--border);
+}
+.sidebar nav button,
+.breadcrumb,
+.workspace-label,
+.muted,
+.small.muted,
+.page-heading p,
+.entry-intro,
+.entry-step,
+.entry-footer,
+.wallet-greeting p,
+.ledger-caption,
+.asset-person small,
+.wallet-layers small,
+.stat small,
+.assistant-heading p,
+.identity-detail small,
+.socials-label > span,
+.photo-picker small,
+.footer,
+.account small {
+  color: var(--subtext);
+}
+.sidebar nav button.active,
+.sidebar nav button.active:hover,
+.brand-mark,
+.primary,
+.send {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--text);
+}
+.primary:hover,
+.send:hover {
+  background: var(--accent);
+}
+.sidebar nav button:hover,
+.asset-row:hover,
+.question-row:hover {
+  background: var(--tint);
+  color: var(--text);
+}
+.panel,
+.modal,
+.assistant,
+.contact-card,
+.wallet-ledger,
+.self-profile,
+.identity-card,
+.profile-settings,
+.theme-picker,
+.stat {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+.secondary,
+.social-button,
+.ledger-filters button,
+.contact-tools button {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+.secondary:hover,
+.social-button:hover {
+  background: var(--tint);
+}
+.entry-signin,
+.entry-main .goal-panel,
+.context-guide,
+.context-coach,
+.profile-focus,
+.identity-detail,
+.context-list button {
+  background: var(--tint);
+  color: var(--text);
+  border-color: var(--border);
+}
+.identity-detail {
+  background: var(--soft);
+}
+.field > span,
+.identity-detail .text-link,
+.entry-main .eyebrow,
+.eyebrow,
+.goal-label,
+.goal-next button,
+.context-list b,
+.context-list span {
+  color: var(--text);
+}
+.goal-label span,
+.goal-next > span,
+.goal-next,
+.self-profile > p,
+.context-coach p,
+.context-guide small {
+  color: var(--subtext);
+}
+.field input,
+.field textarea,
+.field select,
+input,
+textarea,
+select,
+.ask-box,
+.search {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+input::placeholder,
+textarea::placeholder {
+  color: var(--subtext);
+  opacity: 0.8;
+}
+input:focus,
+textarea:focus,
+select:focus {
+  outline-color: var(--accent);
+}
+.field input:focus,
+.field textarea:focus,
+.field select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+.role-card select,
+.role-card textarea,
+.role-card input {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+.network-balance,
+.identity-cover {
+  background: var(--deep);
+  color: var(--deep-text);
+}
+.balance-top > span,
+.balance-top .balance-status,
+.balance-total > span,
+.balance-bottom,
+.balance-bottom button {
+  color: var(--deep-text);
+}
+.balance-total strong,
+.cover-symbol {
+  color: var(--accent);
+}
+.balance-status i {
+  background: var(--accent);
+}
+.balance-bottom {
+  border-color: color-mix(in srgb, var(--deep-text) 25%, transparent);
+}
+.wallet-layers > button,
+.wallet-layers > button:nth-child(3) {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+.wallet-layers > button:nth-child(2) {
+  background: var(--secondary-surface);
+}
+.wallet-layers > button:nth-child(3) {
+  background: var(--tint);
+}
+.wallet-actions > button {
+  color: var(--text);
+}
+.wallet-actions > button > span,
+.identity-icon {
+  background: var(--tint);
+  color: var(--text);
+  border-color: var(--border);
+}
+.wallet-actions > button > .ask-action,
+.wallet-actions > button:hover > span {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.role-icon,
+.question-symbol {
+  background: var(--secondary-surface);
+  color: var(--secondary-text);
+}
+.identity-toolbar > .avatar.large {
+  border-color: var(--surface);
+}
+.identity-socials,
+.ledger-tabs,
+.asset-row,
+.question-row,
+.entry-header,
+.topbar,
+.account,
+.sidebar-note,
+.goal-next {
+  border-color: var(--border);
+}
+.ledger-tabs > button {
+  color: var(--subtext);
+}
+.ledger-tabs > button[aria-selected="true"] {
+  color: var(--text);
+  border-color: var(--accent);
+}
+.ledger-tabs span,
+.question-matches {
+  color: var(--text);
+}
+.ledger-tabs span {
+  background: var(--soft);
+}
+.ledger-filters button[aria-pressed="true"],
+.contact-tools button[aria-pressed="true"] {
+  background: var(--deep);
+  color: var(--deep-text);
+  border-color: var(--deep);
+}
+.bottom-nav {
+  background: var(--surface);
+  border-color: var(--border);
+}
+.bottom-nav button {
+  color: var(--subtext);
+}
+.bottom-nav button.active {
+  color: var(--text);
+}
+.bottom-nav button.active svg {
+  background: var(--tint);
+  box-shadow: 0 0 0 5px var(--tint);
+}
+.avatar:not(img) {
+  background: var(--secondary-surface) !important;
+  color: var(--secondary-text);
+}
+.identity-card,
+.self-profile,
+.entry-signin,
+.entry-main .goal-panel {
+  box-shadow:
+    0 5px 0 color-mix(in srgb, var(--border) 80%, transparent),
+    0 18px 35px -25px #0005;
+}
+.cover-orbit {
+  border-color: color-mix(in srgb, var(--accent) 20%, transparent);
+}
+.orbit-two {
+  border-color: color-mix(in srgb, var(--accent) 9%, transparent);
+}
+.evidence,
+.question-bubble,
+.recommendation,
+.answer .economics,
+.next-step,
+.opportunity,
+.notice {
+  background: var(--soft);
+  color: var(--text);
+  border-color: var(--border);
+}
+.profile-settings > summary,
+.text-link,
+.question-matches small,
+.stat > div {
+  color: var(--text);
+}
+.profile-settings .settings-grid {
+  background: var(--surface);
+}
+.links-dropdown {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin: 22px 0;
+  background: var(--surface);
+}
+.links-dropdown > summary {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 16px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  list-style: none;
+  color: var(--text);
+}
+.links-dropdown > summary::-webkit-details-marker {
+  display: none;
+}
+.links-dropdown > summary > span {
+  font-size: 10px;
+  color: var(--subtext);
+  font-weight: 400;
+}
+.links-dropdown > summary svg {
+  margin-left: auto;
+  transition: transform 180ms ease;
+}
+.links-dropdown[open] > summary svg {
+  transform: rotate(180deg);
+}
+.links-editor {
+  padding: 0 15px 17px;
+}
+.link-editor-row {
+  display: grid;
+  grid-template-columns: 125px minmax(0, 1fr) 30px;
+  gap: 9px;
+  align-items: center;
+}
+.link-editor-row .field {
+  margin: 9px 0;
+}
+.link-editor-row .field > span {
+  font-size: 10px;
+}
+.links-editor > .secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 10px;
+}
+.theme-picker {
+  max-width: 780px;
+  margin: 0 auto 24px;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+}
+.theme-picker-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.theme-picker-heading h2 {
+  font-size: 17px;
+}
+.theme-options {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+.theme-options > button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  font-size: 11px;
+  color: var(--subtext);
+  padding: 0;
+}
+.theme-options > button[aria-pressed="true"] {
+  color: var(--text);
+  font-weight: 700;
+}
+.theme-preview {
+  position: relative;
+  display: block;
+  height: 62px;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  width: 100%;
+  overflow: hidden;
+}
+.theme-options > button[aria-pressed="true"] .theme-preview {
+  border-color: var(--text);
+  box-shadow:
+    0 0 0 2px var(--surface),
+    0 0 0 3px var(--accent);
+}
+.theme-preview > i {
+  display: block;
+  position: absolute;
+  inset: 9px 9px 24px;
+  border-radius: 5px;
+}
+.theme-preview > b {
+  position: absolute;
+  left: 9px;
+  right: 30%;
+  bottom: 9px;
+  height: 10px;
+  border-radius: 3px;
+}
+.theme-preview > span {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  background: var(--text);
+  color: var(--surface);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  width: 19px;
+  height: 19px;
+}
+.wallet-actions {
+  justify-content: space-evenly;
+  gap: 15px;
+}
+.wallet-notifications > span {
+  position: relative;
+}
+.wallet-notifications i {
+  position: absolute;
+  top: -3px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-size: 9px;
+  font-style: normal;
+  background: var(--deep);
+  color: var(--deep-text);
+  border: 2px solid var(--app-bg);
+}
+@media (max-width: 640px) {
+  .wallet-actions {
+    gap: 8px;
+    justify-content: space-between;
+  }
+  .wallet-actions > button {
+    font-size: 9px;
+  }
+  .wallet-actions > button > span {
+    width: 49px;
+    height: 49px;
+  }
+  .theme-picker {
+    padding: 20px 16px;
+  }
+  .theme-options {
+    gap: 9px;
+  }
+  .theme-preview {
+    height: 53px;
+  }
+  .theme-options > button {
+    font-size: 10px;
+  }
+  .link-editor-row {
+    grid-template-columns: 100px minmax(0, 1fr) 24px;
+    gap: 7px;
+  }
+  .link-editor-row input,
+  .link-editor-row select {
+    padding: 10px 8px;
+    font-size: 12px;
+  }
+}
+.cover-symbol svg {
+  width: 1em;
+  height: 1em;
+  stroke-width: 1.7;
+}
+.network-balance {
+  box-shadow:
+    0 5px 0 var(--border),
+    0 20px 35px -22px #0005;
+  border-color: var(--border);
+}
+.greeting-dot {
+  color: var(--accent);
+}
+.avatar.avatar-photo {
+  border-color: var(--border);
+}
+.prompt-list button,
+.path b {
+  background: var(--soft);
+  color: var(--text);
+  border-color: var(--border);
+}
+.answer-title,
+.brief dt,
+.economics summary,
+.economics b,
+.answer > p,
+.recommendation p,
+.brief dd,
+.economics p,
+.evidence p,
+.answer .small {
+  color: var(--text);
+}
+.assistant-footer,
+.recommendation .person-row small,
+.evidence small,
+.contact-card .position,
+.contact-card .location,
+.contact-need p {
+  color: var(--subtext);
+}
+.path {
+  color: var(--text);
+}

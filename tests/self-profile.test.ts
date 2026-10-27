@@ -9,8 +9,8 @@ import {
   mergeDemoProfile,
   demoProfileForDisplay,
 } from "../lib/self-profile";
-test("self profile requires a real name, valid audience, and a goal", () => {
-  assert.equal(readSelfProfile(blankSelfProfile()), null);
+test("self profile accepts empty details and validates supplied values", () => {
+  assert.deepEqual(readSelfProfile(blankSelfProfile()), blankSelfProfile());
   const profile = {
     ...blankSelfProfile(),
     name: "  Jordan  ",
@@ -21,7 +21,7 @@ test("self profile requires a real name, valid audience, and a goal", () => {
   assert.equal(saved.name, "Jordan");
   assert.equal(saved.goal, "Find designers");
   assert.equal(readSelfProfile({ ...profile, role: "Admin" }), null);
-  assert.equal(readSelfProfile({ ...profile, goal: " " }), null);
+  assert.equal(readSelfProfile({ ...profile, goal: " " })?.goal, "");
   assert.equal(readSelfProfile({ ...profile, name: "x".repeat(101) }), null);
 });
 test("corrupt or unrelated profile data returns to setup", () => {
@@ -49,42 +49,28 @@ test("corrupt or unrelated profile data returns to setup", () => {
   );
 });
 
-test("role step requires handwritten detail and a company for founders and owners", () => {
-  for (const role of ["Business owner", "Founder"]) {
+test("role setup permits an empty role, description, or company", () => {
+  for (const role of [
+    "",
+    "Founder",
+    "Business owner",
+    "Agency",
+    "Skilled worker / Talent",
+  ])
     assert.equal(
-      roleStepSchema.safeParse({
-        role,
-        roleDescription: "Building tools",
-        companyName: "",
-      }).success,
-      false,
-    );
-    assert.equal(
-      roleStepSchema.safeParse({
-        role,
-        roleDescription: "Building tools",
-        companyName: "Acme",
-      }).success,
+      roleStepSchema.safeParse({ role, roleDescription: "", companyName: "" })
+        .success,
       true,
     );
-  }
   assert.equal(
-    roleStepSchema.safeParse({
-      role: "Agency",
-      roleDescription: "Recruitment",
-      companyName: "",
-    }).success,
-    true,
+    roleStepSchema.safeParse({ role: "invalid", roleDescription: "" }).success,
+    false,
   );
   assert.equal(
     roleStepSchema.safeParse({
-      role: "Skilled worker / Talent",
-      roleDescription: "Data analyst",
+      role: "Founder",
+      roleDescription: "x".repeat(2001),
     }).success,
-    true,
-  );
-  assert.equal(
-    roleStepSchema.safeParse({ role: "Agency", roleDescription: " " }).success,
     false,
   );
 });
@@ -105,7 +91,7 @@ test("blank demo setup uses a fictional profile and partial input wins over defa
   const defaults = mergeDemoProfile(blankSelfProfile());
   assert.equal(defaults.name, "Alex Morgan");
   assert.ok(defaults.goal);
-  assert.ok(defaults.companyName);
+  assert.ok(defaults.workCompany);
   const partial = mergeDemoProfile({
     ...blankSelfProfile(),
     role: "Skilled worker / Talent",
@@ -119,7 +105,7 @@ test("blank demo setup uses a fictional profile and partial input wins over defa
   assert.equal(partial.goal, "Get my first client");
   assert.equal(partial.companyName, "");
   assert.equal(roleDraftSchema.safeParse(blankSelfProfile()).success, true);
-  assert.equal(roleStepSchema.safeParse(blankSelfProfile()).success, false);
+  assert.equal(roleStepSchema.safeParse(blankSelfProfile()).success, true);
 });
 
 test("identity details support a distinct display name and employer", () => {

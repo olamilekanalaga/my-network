@@ -10,6 +10,7 @@ import {
   BriefcaseBusiness,
   Wrench,
   ScanLine,
+  Bell,
 } from "lucide-react";
 import type { Person } from "@/lib/types";
 import {
@@ -144,6 +145,17 @@ export default function WalletHome({
             <MessageCircle size={24} />
           </span>
           Ask my network
+        </button>
+        <button
+          className="wallet-notifications"
+          aria-label={`Notifications${followups ? ` · ${followups} follow-ups` : ""}`}
+          onClick={onFollowups}
+        >
+          <span>
+            <Bell size={23} />
+            {followups > 0 && <i>{followups}</i>}
+          </span>
+          Notifications
         </button>
       </div>
       <section

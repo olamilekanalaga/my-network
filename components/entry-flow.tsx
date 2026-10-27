@@ -13,7 +13,6 @@ import {
   roleDraftSchema,
   mergeDemoProfile,
   migrateProfileRole,
-  demoProfileForDisplay,
   demoProfileKey,
   entryModeKey,
   readSelfProfile,
@@ -24,6 +23,7 @@ import { Field } from "./ui";
 import { PhotoPicker, ProfileLinks } from "./profile-media";
 import { safePhotoUrl, normalizeLinks } from "@/lib/profile-media";
 import Workspace from "./workspace";
+import { readTheme, applyTheme, type ThemeId } from "@/lib/themes";
 
 type Screen = "signin" | "onboarding" | "profile" | "workspace";
 export default function EntryFlow({ screen }: { screen: Screen }) {
@@ -48,6 +48,7 @@ export default function EntryFlow({ screen }: { screen: Screen }) {
         let selected: "demo" | "live" | null = null;
         let saved: SelfProfile | null = null;
         let initial = blankSelfProfile();
+        initial.theme = readTheme();
         let key = "network-profile-draft-demo";
         if (localStorage.getItem(entryModeKey) === "demo") {
           selected = "demo";
@@ -55,7 +56,6 @@ export default function EntryFlow({ screen }: { screen: Screen }) {
             saved = readSelfProfile(
               JSON.parse(localStorage.getItem(demoProfileKey) || "null"),
             );
-            if (saved) saved = demoProfileForDisplay(saved);
           } catch {
             /* A malformed profile returns to setup without touching contacts. */
           }
@@ -128,14 +128,7 @@ export default function EntryFlow({ screen }: { screen: Screen }) {
         }
         const current = draft || saved || initial;
         setProfile(current);
-        if (
-          selected === "live" &&
-          screen === "profile" &&
-          !roleStepSchema.safeParse(current).success
-        ) {
-          router.replace("/onboarding");
-          return;
-        }
+        if (selected) applyTheme(current.theme);
         if (!selected && screen !== "signin") {
           router.replace("/");
           return;
@@ -213,19 +206,10 @@ export default function EntryFlow({ screen }: { screen: Screen }) {
     setBusy(true);
     setError("");
     try {
-      const roleCheck = roleStepSchema.safeParse(profile);
-      if (mode !== "demo" && !roleCheck.success) {
-        router.push("/onboarding");
-        return;
-      }
-      const parsed = selfProfileSchema.safeParse(
-        mode === "demo"
-          ? mergeDemoProfile({
-              ...profile,
-              links: normalizeLinks(profile.links),
-            })
-          : { ...profile, links: normalizeLinks(profile.links) },
-      );
+      const parsed = selfProfileSchema.safeParse({
+        ...profile,
+        links: normalizeLinks(profile.links),
+      });
       if (!parsed.success) throw new Error(parsed.error.issues[0].message);
       if (mode === "demo")
         localStorage.setItem(demoProfileKey, JSON.stringify(parsed.data));
@@ -295,6 +279,19 @@ export default function EntryFlow({ screen }: { screen: Screen }) {
       setError("Could not save your progress. Please try again.");
     }
   }
+  async function changeTheme(theme: ThemeId) {
+    const next = { ...profile, theme };
+    setProfile(next);
+    applyTheme(theme);
+    if (mode === "demo")
+      localStorage.setItem(demoProfileKey, JSON.stringify(next));
+    else if (mode === "live") {
+      const { error } = await browserDb().auth.updateUser({
+        data: { network_profile: next },
+      });
+      if (error) throw error;
+    }
+  }
   async function exit() {
     setError("");
     try {
@@ -330,10 +327,11 @@ export default function EntryFlow({ screen }: { screen: Screen }) {
           profile={profile}
           onEditProfile={() => router.push("/onboarding/profile")}
           onExit={() => void exit()}
+          onThemeChange={changeTheme}
         />
       </>
     );
-  const focus = goals[profile.role];
+  const focus = goals[profile.role || "Other"];
   return (
     <div className="entry-shell">
       <header className="entry-header">
@@ -422,19 +420,21 @@ export default function EntryFlow({ screen }: { screen: Screen }) {
                       setError("");
                     }}
                   >
+                    <option value="">Choose a role (optional)</option>
                     {profileRoles.map((role) => (
                       <option key={role}>{role}</option>
                     ))}
                   </select>
                 </Field>
                 <div key={profile.role} className="role-questions">
-                  <Field label={roleFields[profile.role].label}>
+                  <Field label={roleFields[profile.role || "Other"].label}>
                     <textarea
-                      required={mode !== "demo"}
                       rows={3}
                       maxLength={2000}
                       value={profile.roleDescription}
-                      placeholder={roleFields[profile.role].placeholder}
+                      placeholder={
+                        roleFields[profile.role || "Other"].placeholder
+                      }
                       onChange={(e) => set("roleDescription", e.target.value)}
                     />
                   </Field>
@@ -449,7 +449,6 @@ export default function EntryFlow({ screen }: { screen: Screen }) {
                       }
                     >
                       <input
-                        required={mode !== "demo" && profile.role !== "Agency"}
                         maxLength={150}
                         autoComplete="organization"
                         value={profile.companyName}
@@ -519,7 +518,7 @@ export default function EntryFlow({ screen }: { screen: Screen }) {
                   <Field label="Your name">
                     <input
                       autoComplete="name"
-                      required={mode !== "demo"}
+
                       maxLength={100}
                       value={profile.name}
                       onChange={(e) => set("name", e.target.value)}
@@ -573,7 +572,6 @@ export default function EntryFlow({ screen }: { screen: Screen }) {
                 </Field>
                 <Field label="What’s your next move?">
                   <textarea
-                    required={mode !== "demo"}
                     rows={3}
                     maxLength={1000}
                     placeholder="I want to find my first three clients…"
@@ -590,9 +588,8 @@ export default function EntryFlow({ screen }: { screen: Screen }) {
                   <ArrowRight size={18} />
                 </button>
                 <p className="small">
-                  {mode === "demo"
-                    ? "Fill in as much or as little as you like. Blank fields use fictional demo details; your changes stay in this browser."
-                    : "Saved privately to your account. This does not create a public listing."}
+                  All details are optional. Leave anything blank and add it
+                  later.
                 </p>
               </section>
             </form>

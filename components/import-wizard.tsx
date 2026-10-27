@@ -1,10 +1,11 @@
 "use client";
-import { useState } from "react";
-import { Upload, Check, Smartphone, Link2 } from "lucide-react";
-import { Modal, Badge, Avatar } from "./ui";
-import { parseContacts, duplicateOf, mergePeople } from "@/lib/import";
+import { useRef, useState } from "react";
+import { Check, Smartphone, ArrowRight } from "lucide-react";
+import { Modal, Badge, Avatar, Field } from "./ui";
+import { duplicateOf, mergePeople, parseContacts } from "@/lib/import";
+import { contactsFromDevice, type DeviceContact } from "@/lib/device-contacts";
+import { normalizeLinks, profileLinksSchema } from "@/lib/profile-media";
 import { blankPerson, type Person } from "@/lib/types";
-import { browserDb, configured, getGoogleToken } from "@/lib/supabase";
 export default function ImportWizard({
   people,
   onSave,
@@ -16,117 +17,90 @@ export default function ImportWizard({
   onClose: () => void;
   onEnrich: (p: Person) => void;
 }) {
+  const input = useRef<HTMLInputElement>(null);
   const [rows, setRows] = useState<Person[]>([]),
     [selected, setSelected] = useState<string[]>([]),
     [stage, setStage] = useState(1),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     [policy, setPolicy] = useState("skip"),
-    [count, setCount] = useState(0);
-  const [saved, setSaved] = useState<Person[]>([]);
-  function preview(items: Person[]) {
-    setRows(items);
-    setSelected(items.map((x) => x.id));
+    [savedCount, setSavedCount] = useState(0),
+    [existingCount, setExistingCount] = useState(0),
+    [editable, setEditable] = useState<Person[]>([]);
+  function preview(contacts: Person[]) {
+    if (!contacts.length) {
+      setError(
+        "No contacts found. Choose another contact card or add a contact manually.",
+      );
+      return;
+    }
+    setRows(contacts);
+    setSelected(contacts.map((p) => p.id));
     setStage(2);
     setError("");
   }
-  async function file(f?: File) {
-    if (!f) return;
+  async function file(file?: File) {
+    if (!file) return;
+    setError("");
     try {
-      if (f.size > 5_000_000) throw new Error("Maximum file size is 5 MB.");
-      preview(parseContacts(await f.text(), f.name));
-    } catch (e) {
-      setError((e as Error).message);
+      if (!/\.vcf$/i.test(file.name))
+        throw new Error(
+          "Choose a contact card (.vcf) shared from your contacts app.",
+        );
+      if (file.size > 5_000_000)
+        throw new Error("Choose a contact card smaller than 5 MB.");
+      preview(
+        parseContacts(await file.text(), file.name).map((person) => ({
+          ...person,
+          links: normalizeLinks(person.links).filter(
+            (url) => profileLinksSchema.element.safeParse(url).success,
+          ),
+        })),
+      );
+    } catch (err) {
+      setError((err as Error).message);
     }
   }
   async function device() {
-    try {
-      const n = navigator as unknown as {
+    setError("");
+    const contacts = (
+      navigator as unknown as {
         contacts?: {
           select: (
             fields: string[],
             options: { multiple: boolean },
-          ) => Promise<{ name?: string[]; email?: string[]; tel?: string[] }[]>;
+          ) => Promise<DeviceContact[]>;
+          getProperties?: () => Promise<string[]>;
         };
-      };
-      if (!n.contacts)
-        throw new Error(
-          "Contact Picker is unavailable in this browser. Export contacts as CSV or VCF, then upload them here.",
-        );
-      const contacts = await n.contacts.select(["name", "email", "tel"], {
-        multiple: true,
-      });
-      preview(
-        contacts
-          .map((c) => ({
-            ...blankPerson(),
-            name: c.name?.[0] || "",
-            email: c.email?.[0] || "",
-            phone: c.tel?.[0] || "",
-            source: "Device contact picker",
-            verification: "Inferred" as const,
-          }))
-          .filter((p) => p.name),
-      );
-    } catch (e) {
-      setError((e as Error).message);
+      }
+    ).contacts;
+    if (!contacts?.select) {
+      input.current?.click();
+      return;
     }
-  }
-  async function google() {
     setBusy(true);
-    setError("");
     try {
-      if (!configured())
-        throw new Error(
-          "Configure Supabase and Google OAuth first. CSV and VCF imports work without external services.",
-        );
-      const db = browserDb();
-      const {
-        data: { session },
-      } = await db.auth.getSession();
-      if (!session)
-        throw new Error(
-          "Sign in with Google in Settings using Contacts permission, then return here.",
-        );
-      if (!getGoogleToken() && !session.provider_token)
-        throw new Error(
-          "Google token is unavailable. Reconnect Google in Settings; provider tokens are never saved by this app.",
-        );
-      const r = await fetch("/api/google-contacts", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          providerToken: getGoogleToken() || session.provider_token,
-        }),
-      });
-      const result = await r.json();
-      if (!r.ok) throw new Error(result.error);
-      preview(
-        result
-          .map(
-            (c: {
-              names?: { displayName: string }[];
-              emailAddresses?: { value: string }[];
-              phoneNumbers?: { value: string }[];
-              organizations?: { title?: string; name?: string }[];
-            }) => ({
-              ...blankPerson(),
-              name: c.names?.[0]?.displayName || "",
-              email: c.emailAddresses?.[0]?.value || "",
-              phone: c.phoneNumbers?.[0]?.value || "",
-              position:
-                c.organizations?.[0]?.title || c.organizations?.[0]?.name || "",
-              source: "Google Contacts import",
-              verification: "Inferred" as const,
-            }),
-          )
-          .filter((p: Person) => p.name),
+      const available = contacts.getProperties
+        ? await contacts.getProperties()
+        : ["name", "email", "tel"];
+      const fields = ["name", "email", "tel"].filter((field) =>
+        available.includes(field),
       );
-    } catch (e) {
-      setError((e as Error).message);
+      if (!fields.length)
+        throw new Error(
+          "This browser cannot read contact details. Add the contact manually instead.",
+        );
+      preview(
+        contactsFromDevice(await contacts.select(fields, { multiple: true })),
+      );
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
+      setError(
+        err instanceof DOMException &&
+          ["NotAllowedError", "SecurityError"].includes(err.name)
+          ? "Contacts weren’t shared. Try again or add a contact manually."
+          : (err as Error).message,
+      );
     } finally {
       setBusy(false);
     }
@@ -135,33 +109,46 @@ export default function ImportWizard({
     setBusy(true);
     setError("");
     let working = [...people];
-    const completed: Person[] = [];
+    const ready = new Map<string, Person>();
+    let count = 0,
+      skipped = 0;
     try {
-      for (const p of rows.filter((p) => selected.includes(p.id))) {
-        const duplicate = duplicateOf(p, working);
-        if (duplicate && policy === "skip") continue;
-        const result = duplicate ? mergePeople(duplicate, p) : p;
+      for (const person of rows.filter((p) => selected.includes(p.id))) {
+        const duplicate = duplicateOf(person, working);
+        if (duplicate && policy === "skip") {
+          ready.set(duplicate.id, duplicate);
+          skipped++;
+          continue;
+        }
+        const result = duplicate ? mergePeople(duplicate, person) : person;
         await onSave(result);
-        working = [...working.filter((x) => x.id !== result.id), result];
-        completed.push(result);
-        setCount((n) => n + 1);
+        count++;
+        working = [...working.filter((p) => p.id !== result.id), result];
+        ready.set(result.id, result);
       }
-      setSaved(completed);
+      setSavedCount(count);
+      setExistingCount(skipped);
+      setEditable([...ready.values()]);
       setStage(3);
-    } catch (e) {
+    } catch (err) {
       setError(
-        `Import stopped after ${completed.length} saved contacts. Retry safely: existing matches will be detected. ${(e as Error).message}`,
+        `${count} saved before import stopped. You can retry; duplicates will be checked. ${(err as Error).message}`,
       );
     } finally {
       setBusy(false);
     }
   }
   return (
-    <Modal title="Bring your network together" onClose={onClose}>
+    <Modal
+      title="Import contacts"
+      onClose={() => {
+        if (!busy) onClose();
+      }}
+    >
       <div className="steps">
-        {["Import", "Select & review", "Add context"].map((s, i) => (
-          <span key={s} className={stage === i + 1 ? "active" : ""}>
-            {i + 1}. {s}
+        {["Choose", "Review", "Add details"].map((label, i) => (
+          <span key={label} className={stage === i + 1 ? "active" : ""}>
+            {i + 1}. {label}
           </span>
         ))}
       </div>
@@ -171,50 +158,48 @@ export default function ImportWizard({
         </p>
       )}
       {stage === 1 ? (
-        <>
-          <p className="muted">
-            A contact is a starting point. You decide what the app learns about
-            them.
-          </p>
-          <label className="dropzone">
-            <Upload size={30} />
-            <strong>Import CSV or vCard</strong>
-            <span>Name, email, phone — we’ll handle the basics.</span>
-            <input
-              aria-label="Import contact file"
-              type="file"
-              accept=".csv,.vcf"
-              onChange={(e) => file(e.target.files?.[0])}
-            />
-            <span className="small">Up to 2,000 contacts · 5 MB</span>
-          </label>
-          <div className="two-buttons">
-            <button className="secondary" onClick={device}>
-              <Smartphone size={16} /> Device contacts
-            </button>
-            <button className="secondary" disabled={busy} onClick={google}>
-              <Link2 size={16} /> Google Contacts
-            </button>
-          </div>
-          <a className="text-link" href="/sample-contacts.csv" download>
-            Download sample CSV
-          </a>
+        <div className="contact-import-start">
+          <span className="contact-import-icon">
+            <Smartphone size={30} />
+          </span>
+          <button
+            className="primary wide"
+            disabled={busy}
+            onClick={() => void device()}
+          >
+            <Smartphone size={17} />
+            {busy ? "Opening contacts…" : "Import from contacts"}
+          </button>
+          <input
+            ref={input}
+            type="file"
+            aria-label="Choose contact card"
+            accept=".vcf,text/vcard,text/x-vcard"
+            hidden
+            onChange={(e) => {
+              const selected = e.target.files?.[0];
+              e.target.value = "";
+              void file(selected);
+            }}
+          />
           <p className="small muted">
-            Google requires OAuth configuration and your permission. Device
-            support varies; CSV and VCF are always available.
+            Select contacts from your phone, or choose a shared contact card
+            (.vcf) if your browser can’t open the address book.
           </p>
-        </>
+          <button className="text-link" onClick={() => onEnrich(blankPerson())}>
+            Add a contact manually
+            <ArrowRight size={14} />
+          </button>
+        </div>
       ) : stage === 2 ? (
         <>
           <div className="section-title">
-            <span>
-              {selected.length} of {rows.length} selected
-            </span>
+            <span>{selected.length} selected</span>
             <button
               className="text-link"
               onClick={() =>
                 setSelected(
-                  selected.length === rows.length ? [] : rows.map((x) => x.id),
+                  selected.length === rows.length ? [] : rows.map((p) => p.id),
                 )
               }
             >
@@ -228,73 +213,76 @@ export default function ImportWizard({
                 <label className="import-row" key={p.id}>
                   <input
                     type="checkbox"
+                    disabled={busy}
                     checked={selected.includes(p.id)}
                     onChange={(e) =>
                       setSelected(
                         e.target.checked
                           ? [...selected, p.id]
-                          : selected.filter((x) => x !== p.id),
+                          : selected.filter((id) => id !== p.id),
                       )
                     }
                   />
                   <Avatar name={p.name} photo={p.photo} />
                   <span>
                     <strong>{p.name}</strong>
-                    <small>{p.email || p.phone || "No contact details"}</small>
+                    <small>{p.email || p.phone || ""}</small>
                     {duplicate && (
-                      <Badge tone="amber">
-                        Possible duplicate: {duplicate.name}
-                      </Badge>
+                      <Badge tone="amber">Already in contacts</Badge>
                     )}
                   </span>
                 </label>
               );
             })}
           </div>
-          <label className="field">
-            <span>Possible duplicate handling</span>
+          <Field label="Existing contacts">
             <select value={policy} onChange={(e) => setPolicy(e.target.value)}>
-              <option value="skip">Skip duplicates</option>
-              <option value="merge">
-                Merge into existing: fill blanks, preserve existing context
-              </option>
+              <option value="skip">Keep existing details</option>
+              <option value="merge">Add missing details</option>
             </select>
-          </label>
+          </Field>
           <button
             className="primary wide"
             disabled={busy || !selected.length}
-            onClick={commit}
+            onClick={() => void commit()}
           >
-            {busy ? `Saving… ${count}` : "Import selected contacts"}
+            {busy ? "Importing…" : "Import selected contacts"}
           </button>
-          <button className="text-link" onClick={() => setStage(1)}>
-            Choose another source
+          <button
+            className="text-link"
+            disabled={busy}
+            onClick={() => setStage(1)}
+          >
+            Choose contacts again
           </button>
         </>
       ) : (
         <>
-          <div className="success-icon">
+          <span className="success-icon">
             <Check size={26} />
-          </div>
-          <h3>{saved.length} contacts saved</h3>
-          <p className="muted">
-            Now add context to the people who matter. Their needs and
-            capabilities help the assistant make useful connections.
-          </p>
-          {saved.slice(0, 20).map((p) => (
-            <button
-              className="person-row wide"
-              key={p.id}
-              onClick={() => onEnrich(p)}
-            >
-              <Avatar name={p.name} photo={p.photo} />
-              <strong>{p.name}</strong>
-              <span className="text-link push">Add context →</span>
-            </button>
-          ))}
-          {!saved.length && (
-            <p>All selected contacts were duplicates and were skipped.</p>
+          </span>
+          <h3>{savedCount} imported</h3>
+          {existingCount > 0 && (
+            <p className="small muted">{existingCount} already in Contacts.</p>
           )}
+          <p className="small muted">Add details now or later.</p>
+          <div className="import-list">
+            {editable.map((p) => (
+              <button
+                className="person-row wide"
+                key={p.id}
+                onClick={() => onEnrich(p)}
+                aria-label={`Add details for ${p.name}`}
+              >
+                <Avatar name={p.name} photo={p.photo} />
+                <strong>{p.name}</strong>
+                <span className="text-link push">
+                  Add details
+                  <ArrowRight size={14} />
+                </span>
+              </button>
+            ))}
+          </div>
           <button className="primary wide" onClick={onClose}>
             Done
           </button>

@@ -34,7 +34,7 @@ No `.env.local` is needed for the demo. Do not run `npm start` until `npm run bu
 4. Import → Add context beside Nia. Add services, needs, where you met, professional links and any additional categories. Save.
 5. Find Nia in People, edit again and reload to confirm persistence.
 
-VCF support: vCard 3/4 common FN/N/EMAIL/TEL/TITLE/URL fields, folded lines and escaped text. Legacy quoted-printable/binary/photo vCards and custom Google CSV column mappings are not fully supported. Review the preview before importing. Limits: 5 MB and 2,000 contacts per CSV/VCF import.
+Contact-card support: common vCard FN/N/EMAIL/TEL/TITLE/URL fields, folded lines, and escaped text. Review before importing. Limits: 5 MB and 2,000 contacts per contact card. CSV is not offered in the UI.
 
 ### B. Find a service → evidence → opportunity
 
@@ -58,7 +58,7 @@ Demo intelligence is deterministic lexical retrieval + recorded graph paths, not
 1. Create a Supabase project. Run `supabase/migrations/001_network.sql` in the SQL Editor of a **fresh** project, or apply it with the Supabase CLI (`supabase db push`). The migration is intentionally not a repeated idempotent script.
 2. Copy `.env.example` to `.env.local`. Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (the public anon key). Never put a service-role key or OpenAI key in a `NEXT_PUBLIC_` variable.
 3. In Supabase Auth configure the Site URL and redirect allowlist for `http://localhost:3000` and your eventual production HTTPS origin. Enable email/password and email confirmation as appropriate. Configure SMTP before inviting real users.
-4. Restart the app. In Profile/Settings create an account, confirm the email if required, then sign in.
+4. Restart the app, sign in with Google from the welcome page, and complete or skip the optional profile details. Enable the Google provider and allow the production `/onboarding` redirect in Supabase first.
 5. A connected account starts **empty**. Demo records are never silently uploaded. Signing out returns to browser-local demo data.
 
 Every server route validates the access token through `auth.getUser`. Database calls use the current user's bearer token and the anon key, so PostgreSQL RLS is also enforced. The server sets owner_id itself. Composite foreign keys prevent linking another account's people, organisations, facts, transactions or opportunities. No service-role key is used by this app.
@@ -86,16 +86,13 @@ Generated prose is labelled **AI hypothesis**. Evidence, source IDs, participant
 
 The external model integration is implemented but was not called with a real key in this environment. Do not describe it as live-tested. Before broad use, add distributed rate limits, token/spend quotas and stronger model-evaluation coverage.
 
-## Google Contacts OAuth
+## Import phone contacts
 
-1. In Google Cloud enable the People API, configure an OAuth consent screen, and create a web OAuth client. Add Supabase's `/auth/v1/callback` URL to the authorised redirect URIs.
-2. Configure Google in Supabase Auth using that client ID/secret. For linking an existing non-Google account, enable Supabase manual identity linking if required. For development, register test users in Google's consent screen.
-3. In Settings choose “Connect Google with Contacts permission”. The requested additional scope is `https://www.googleapis.com/auth/contacts.readonly`.
-4. After returning, open Import → Google Contacts and review/select results before saving.
+The app offers one **Import from contacts** action. Supported browsers open the device Contact Picker with the user's permission. If the browser cannot expose the address book, the same button accepts a contact card (`.vcf`) shared/exported from the contacts app. CSV and Google Contacts are not import choices. Google sign-in remains independent of contact import and does not request Contacts permission.
 
-The Google provider token is kept in session memory; the app's custom Supabase storage adapter strips provider_token and provider_refresh_token from persistent browser storage. After a reload or expiry, reconnect Google. Supabase access/refresh tokens still persist to support app sign-in. No Google refresh token or contact token is stored in the database. Read-only Google access is server-side, using the user's authorised token; no scraping occurs. Pagination is supported up to 10,000 contacts. Google OAuth consent/verification and real People API calls were not tested without credentials.
+Review selected contacts and choose whether to keep existing details or add missing details. After importing, use **Add details** to open the full contact editor—the same editor used for manually added contacts. Imported contacts can also be edited later from Home or Contacts. Phone-only contacts are kept using their number as an editable identifier. Reimporting with the default option preserves existing details.
 
-Device contact import uses the standard Contact Picker API only where available. Safari/iPhone may not expose it; CSV/VCF is the documented fallback. No unsupported iPhone access is claimed.
+Direct address-book access depends on the browser and requires its supported secure context. Native permission prompts cannot be bypassed. The contact-card fallback is limited to `.vcf`, 5 MB, and 2,000 contacts. Real device permission prompts must be checked on the target phone; browser fixtures validate the selection and editing flow in automated checks.
 
 ## Public enrichment, sharing and privacy
 

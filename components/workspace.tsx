@@ -32,7 +32,6 @@ import {
   StickyNote,
 } from "lucide-react";
 import { useStore, download } from "@/lib/store";
-import { browserDb, configured } from "@/lib/supabase";
 import {
   type Person,
   type Organization,
@@ -252,26 +251,6 @@ export default function Workspace({
   function openPerson(id: string) {
     setPerson(id);
     setOrg(null);
-  }
-  async function connectGoogleContacts() {
-    await store.run(async () => {
-      const db = browserDb();
-      const {
-        data: { session },
-      } = await db.auth.getSession();
-      if (!session)
-        throw new Error("Sign in with Google before connecting contacts.");
-      const options = {
-        scopes: "https://www.googleapis.com/auth/contacts.readonly",
-        redirectTo: window.location.origin,
-      };
-      const result = !session.user.identities?.some(
-        (i) => i.provider === "google",
-      )
-        ? await db.auth.linkIdentity({ provider: "google", options })
-        : await db.auth.signInWithOAuth({ provider: "google", options });
-      if (result.error) throw result.error;
-    });
   }
   function exportData(shareable = false) {
     download(
@@ -872,7 +851,7 @@ export default function Workspace({
               </div>
               {!visible.length && (
                 <Empty>
-                  No matches yet. Add a person or import a contact file.
+                  No matches yet. Add someone or import from contacts.
                 </Empty>
               )}
             </>
@@ -1178,19 +1157,6 @@ export default function Workspace({
                       <button className="secondary" onClick={onExit}>
                         {mode === "demo" ? "Leave demo to sign in" : "Sign out"}
                       </button>
-                    )}
-                    <button
-                      className="secondary wide"
-                      disabled={!configured() || mode !== "live"}
-                      onClick={() => void connectGoogleContacts()}
-                    >
-                      Connect Google with Contacts permission
-                    </button>
-                    {!configured() && (
-                      <p className="small muted">
-                        Google account connections are not available yet. You
-                        can keep exploring the demo.
-                      </p>
                     )}
                   </section>
                   <section className="panel">

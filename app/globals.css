@@ -3543,7 +3543,7 @@ a {
   --accent: #d9b8ff;
   --accent-ink: #30213f;
   --text: #352741;
-  --subtext: #75677e;
+  --subtext: #695b72;
   --border: #d8c8e5;
   --deep: #30213f;
   --deep-text: #faf2ff;
@@ -3558,7 +3558,7 @@ a {
   --accent: #89e3ef;
   --accent-ink: #143447;
   --text: #173748;
-  --subtext: #5e7884;
+  --subtext: #47616e;
   --border: #b8d1db;
   --deep: #143447;
   --deep-text: #ebfaff;
@@ -3573,12 +3573,12 @@ a {
   --accent: #ffb77b;
   --accent-ink: #4b302b;
   --text: #513126;
-  --subtext: #8a6b5d;
+  --subtext: #745345;
   --border: #dfc8b6;
   --deep: #4b302b;
   --deep-text: #fff5ea;
   --secondary-surface: #f5dfe6;
-  --secondary-text: #96576d;
+  --secondary-text: #7d4058;
 }
 [data-theme="midnight"] {
   --app-bg: #151921;
@@ -4383,4 +4383,225 @@ select:focus {
 .nav-count {
   background: var(--accent);
   color: var(--accent-ink);
+}
+
+/* Every dialog surface and control follows the selected theme. */
+.modal > header {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+.modal > header h2,
+.modal > header > button {
+  color: var(--text);
+}
+.modal .steps,
+.import-row small,
+.profile-section p,
+.profile-section small,
+.relationship-row small,
+.transaction small,
+.followup small,
+.toggle small,
+.truncate-notes,
+.money-grid span,
+.org-card p,
+.source,
+.evidence code {
+  color: var(--subtext);
+}
+.steps .active,
+.person-row,
+.money-grid b,
+.org-card h3,
+.relationship-row strong,
+.profile-section h4,
+.modal summary {
+  color: var(--text);
+}
+.chip {
+  background: var(--soft);
+  color: var(--text);
+  border-color: var(--border);
+}
+.chip.selected {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--text);
+}
+.bulkbar,
+.path-finder,
+.org-icon,
+.success-icon,
+.busy {
+  background: var(--tint);
+  color: var(--text);
+  border-color: var(--border);
+}
+.empty {
+  color: var(--subtext);
+  border-color: var(--border);
+}
+.dropzone {
+  background: var(--soft);
+  color: var(--text);
+  border-color: var(--border);
+}
+.dropzone strong,
+.dropzone span {
+  color: var(--text);
+}
+.error {
+  background: color-mix(in srgb, var(--surface) 92%, #d93838);
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--border) 55%, #d93838);
+}
+.danger {
+  background: color-mix(in srgb, var(--surface) 92%, #d93838);
+  color: var(--text);
+  border-color: var(--border);
+}
+.toast {
+  background: var(--deep);
+  color: var(--deep-text);
+}
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--accent);
+}
+.contact-import-start {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 18px 0 12px;
+  gap: 14px;
+}
+.contact-import-icon {
+  width: 78px;
+  height: 78px;
+  display: grid;
+  place-items: center;
+  color: var(--text);
+  background: var(--tint);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+}
+.contact-import-start > .primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 48px;
+}
+.contact-import-start > .text-link {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+}
+.import-row > span {
+  min-width: 0;
+}
+.import-row strong,
+.import-row small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.badge {
+  background: var(--soft);
+  color: var(--text);
+  border-color: var(--border);
+}
+.badge.blue,
+.badge.light {
+  background: color-mix(in srgb, var(--surface) 85%, #6e98db);
+  color: var(--text);
+  border-color: var(--border);
+}
+.badge.green {
+  background: color-mix(in srgb, var(--surface) 85%, #5aa978);
+  color: var(--text);
+  border-color: var(--border);
+}
+.badge.amber {
+  background: color-mix(in srgb, var(--surface) 85%, #d9a64a);
+  color: var(--text);
+  border-color: var(--border);
+}
+.greeting-dot {
+  color: var(--text);
+}
+.profile-head p {
+  color: var(--subtext);
+}
+.field input::placeholder,
+.field textarea::placeholder,
+.search input::placeholder,
+.ask-box textarea::placeholder,
+input::placeholder,
+textarea::placeholder {
+  color: var(--subtext);
+  opacity: 1;
+}
+summary,
+.company-setup > summary,
+.contact-more > summary {
+  color: var(--text);
+}
+.recommendation p b {
+  color: var(--text);
+}
+.people-count,
+.contact-need > span,
+.card-bottom,
+.card-bottom > span,
+.delete-opp,
+.contact-top > svg {
+  color: var(--subtext);
+}
+.tabs button {
+  color: var(--subtext);
+}
+.tabs button.active {
+  color: var(--text);
+  border-color: var(--text);
+}
+.tabs span {
+  background: var(--soft);
+  color: var(--text);
+}
+.customer-extra {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+:root {
+  color-scheme: light;
+}
+[data-theme="midnight"] {
+  color-scheme: dark;
+}
+select option {
+  background: var(--surface);
+  color: var(--text);
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+.photo-upload:focus-within {
+  outline-color: var(--text);
+}
+input:-webkit-autofill {
+  -webkit-text-fill-color: var(--text);
+  box-shadow: 0 0 0 1000px var(--surface) inset;
+}
+::selection {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.overlay {
+  z-index: 110;
 }

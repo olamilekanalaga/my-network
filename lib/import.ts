@@ -62,6 +62,7 @@ function parseVcf(text: string): Person[] {
         if (key === "TITLE") p.position = value;
         if (key === "URL") p.links.push(value);
       }
+      p.name = p.name.trim() || p.email || p.phone;
       p.source = "Imported VCF";
       p.verification = "Inferred";
       return p;

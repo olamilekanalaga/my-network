@@ -191,6 +191,7 @@ export default function Assistant({
                 >
                   <Avatar
                     name={r.name}
+                    sampleKey={r.personId}
                     photo={data.people.find((p) => p.id === r.personId)?.photo}
                   />
                   <span>

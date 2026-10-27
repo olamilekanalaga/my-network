@@ -1073,7 +1073,14 @@ export default function Workspace({
                       <div className="opportunity-people">
                         {o.person_ids.map((id) => (
                           <button key={id} onClick={() => openPerson(id)}>
-                            <Avatar name={personName(id)} size="tiny" />
+                            <Avatar
+                              name={personName(id)}
+                              photo={
+                                data.people.find((p) => p.id === id)?.photo
+                              }
+                              sampleKey={id}
+                              size="tiny"
+                            />
                           </button>
                         ))}
                       </div>
@@ -1322,7 +1329,12 @@ export default function Workspace({
       {p && (
         <Modal title="Relationship profile" onClose={() => setPerson(null)}>
           <div className="profile-head">
-            <Avatar name={p.name} photo={p.photo} size="large" />
+            <Avatar
+              name={p.name}
+              photo={p.photo}
+              sampleKey={p.id}
+              size="large"
+            />
             <div>
               <h2>{p.name}</h2>
               <p>{p.position}</p>
@@ -1720,7 +1732,11 @@ export default function Workspace({
                 key={a.id}
                 onClick={() => openPerson(a.person_id)}
               >
-                <Avatar name={personName(a.person_id)} />
+                <Avatar
+                  name={personName(a.person_id)}
+                  photo={data.people.find((p) => p.id === a.person_id)?.photo}
+                  sampleKey={a.person_id}
+                />
                 <span>
                   <strong>{personName(a.person_id)}</strong>
                   <small>{a.role}</small>
@@ -1991,7 +2007,7 @@ function ContactCard({
   return (
     <button className="contact-card" onClick={onClick}>
       <div className="contact-top">
-        <Avatar name={p.name} photo={p.photo} />
+        <Avatar name={p.name} photo={p.photo} sampleKey={p.id} />
         <ArrowUpRight size={16} />
       </div>
       <h3>{p.name}</h3>

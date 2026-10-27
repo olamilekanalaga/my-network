@@ -121,3 +121,11 @@ Imported contacts go through review and duplicate handling, then every imported 
 Validation: all 47 tests and production build passed. Browser tests used a controlled Contact Picker fixture to check supported-device results, full-editor completion/reload, duplicate preservation, phone-only contacts, and cancellation; actual OS permission prompts require a target-device check. The real file-picker/contact-card path was also exercised, including CSV rejection and subsequent full-editor changes. Midnight import rendering and runtime-error checks passed.
 
 Dialog overlays also sit above temporary save toasts so those messages cannot cover dialog instructions or controls.
+
+## Contact sample avatars
+
+Added 16 bundled portrait illustrations for contacts without a photo. Each contact's stable ID selects its sample avatar, so it stays consistent across reloads and across Home, Contacts, relationship profiles, editing, imports, Ask results, company members, and opportunity participants. Samples are labelled in image alternative text and hover titles. Uploaded or imported actual photos take priority; failed photos fall back to sample art, then initials if the local asset also fails. Personal account avatars are unchanged.
+
+Sample art is a presentation fallback only: it is not written into contact records, exports, notes, matching evidence, or any shared identity profile. The assets are local SVG illustrations without external requests. Member identity linking and mutual-contact visibility remain discussion-only and are not implemented.
+
+Validation: all 47 automated tests and the production build passed. Mobile browser checks passed for all ten seeded contact images loading, stable images after reload, consistent list/detail/editor images, new-contact preview, uploaded-photo priority and persistence, failed-photo fallback without rewriting stored data, unchanged personal avatars, light/dark display, mobile overflow, and runtime errors.

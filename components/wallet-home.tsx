@@ -198,7 +198,7 @@ export default function WalletHome({
                   key={p.id}
                   onClick={() => onPerson(p.id)}
                 >
-                  <Avatar name={p.name} photo={p.photo} />
+                  <Avatar name={p.name} photo={p.photo} sampleKey={p.id} />
                   <span className="asset-person">
                     <strong>{p.name}</strong>
                     <small>

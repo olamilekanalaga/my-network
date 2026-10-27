@@ -9,6 +9,7 @@ import {
   type ReactNode,
   type ReactElement,
 } from "react";
+import { sampleContactAvatar } from "@/lib/contact-avatars";
 import { safePhotoUrl } from "@/lib/profile-media";
 export function Badge({
   children,
@@ -23,22 +24,29 @@ export function Avatar({
   name,
   photo = "",
   size = "",
+  sampleKey,
 }: {
   name: string;
   photo?: string;
   size?: string;
+  sampleKey?: string;
 }) {
-  const [failed, setFailed] = useState("");
-  const src = safePhotoUrl(photo);
-  if (src && failed !== src)
+  const [failed, setFailed] = useState<Record<string, boolean>>({});
+  const actual = safePhotoUrl(photo);
+  const sample = sampleKey ? sampleContactAvatar(sampleKey) : "";
+  const src = [actual, sample].find((url) => url && !failed[url]) || "";
+  const isSample = Boolean(src && src === sample && src !== actual);
+  if (src)
     return (
       <img
         className={`avatar avatar-photo ${size}`}
         src={src}
-        alt={name}
+        alt={isSample ? `${name} · sample avatar` : name}
+        title={isSample ? "Sample avatar" : undefined}
+        data-avatar-kind={isSample ? "sample" : "photo"}
         referrerPolicy="no-referrer"
         loading="lazy"
-        onError={() => setFailed(src)}
+        onError={() => setFailed((previous) => ({ ...previous, [src]: true }))}
       />
     );
   return (

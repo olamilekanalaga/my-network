@@ -223,7 +223,11 @@ export default function ImportWizard({
                       )
                     }
                   />
-                  <Avatar name={p.name} photo={p.photo} />
+                  <Avatar
+                    name={p.name}
+                    photo={duplicate?.photo || p.photo}
+                    sampleKey={duplicate?.id || p.id}
+                  />
                   <span>
                     <strong>{p.name}</strong>
                     <small>{p.email || p.phone || ""}</small>
@@ -274,7 +278,7 @@ export default function ImportWizard({
                 onClick={() => onEnrich(p)}
                 aria-label={`Add details for ${p.name}`}
               >
-                <Avatar name={p.name} photo={p.photo} />
+                <Avatar name={p.name} photo={p.photo} sampleKey={p.id} />
                 <strong>{p.name}</strong>
                 <span className="text-link push">
                   Add details

@@ -54,17 +54,24 @@ export function PhotoPicker({
   value,
   onChange,
   onBusyChange,
+  sampleKey,
 }: {
   name: string;
   value: string;
   onChange: (value: string) => void;
   onBusyChange?: (busy: boolean) => void;
+  sampleKey?: string;
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   return (
     <div className="photo-picker">
-      <Avatar name={name || "Your photo"} photo={value} size="large" />
+      <Avatar
+        name={name || "Your photo"}
+        photo={value}
+        sampleKey={sampleKey}
+        size="large"
+      />
       <div>
         <label className="secondary photo-upload">
           <Camera size={16} />

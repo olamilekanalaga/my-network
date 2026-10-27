@@ -101,6 +101,7 @@ export function PersonForm({
       >
         <PhotoPicker
           name={p.name}
+          sampleKey={p.id}
           value={p.photo}
           onChange={(photo) => set("photo", photo)}
           onBusyChange={setPhotoBusy}

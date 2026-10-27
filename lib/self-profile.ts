@@ -57,6 +57,8 @@ export const roleStepSchema = z
   });
 export const selfProfileSchema = z.object({
   name: z.string().trim().min(1, "Add your name.").max(100),
+  displayName: z.string().trim().max(100).default(""),
+  workCompany: z.string().trim().max(150).default(""),
   role: z.enum(profileRoles),
   roleDescription: z.string().trim().max(2000).default(""),
   companyName: z.string().trim().max(150).default(""),
@@ -71,6 +73,8 @@ export const selfProfileSchema = z.object({
 export type SelfProfile = z.infer<typeof selfProfileSchema>;
 export const blankSelfProfile = (): SelfProfile => ({
   name: "",
+  displayName: "",
+  workCompany: "",
   role: "Business owner",
   roleDescription: "",
   companyName: "",
@@ -103,14 +107,25 @@ export function mergeDemoProfile(input: SelfProfile): SelfProfile {
   };
   const defaults: SelfProfile = {
     name: "Alex Morgan",
+    displayName: "⭕️La_Crrypt💰₿",
+    workCompany: input.companyName.trim() || "Studio North",
     role: input.role,
     roleDescription: defaultDetails[input.role],
     companyName: ["Founder", "Business owner", "Agency"].includes(input.role)
       ? "Studio North"
       : "",
-    photo: "",
+    photo: "/demo-profile.svg",
     links: [],
-    headline: "",
+    headline:
+      input.role === "Founder" || input.role === "Business owner"
+        ? "Founder & community builder"
+        : input.role === "Agency"
+          ? "Agency director"
+          : input.role === "Recruiter"
+            ? "Talent partner"
+            : input.role === "Skilled worker / Talent"
+              ? "Independent creative"
+              : "Community builder",
     location: "London",
     offers: input.roleDescription.trim() || defaultDetails[input.role],
     needs: "Collaborators and new connections",
@@ -140,5 +155,19 @@ export function migrateProfileRole(value: unknown): unknown {
           : typeof saved.headline === "string" && saved.headline.trim()
             ? saved.headline
             : "Exploring my next opportunity",
+  };
+}
+
+export function demoProfileForDisplay(profile: SelfProfile): SelfProfile {
+  const sample = profile.name === "Alex Morgan";
+  return {
+    ...profile,
+    displayName:
+      profile.displayName || (sample ? "⭕️La_Crrypt💰₿" : profile.name),
+    photo: profile.photo || (sample ? "/demo-profile.svg" : ""),
+    workCompany:
+      profile.workCompany ||
+      (sample && !profile.companyName ? "Studio North" : ""),
+    headline: profile.headline || (sample ? "Community builder" : ""),
   };
 }

@@ -3267,3 +3267,254 @@ a {
   gap: 4px;
   font-size: 11px;
 }
+
+/* A personal identity card, with practical details and optional links. */
+.identity-card {
+  max-width: 780px;
+  margin: 4px auto 25px;
+  border: 1.5px solid #bdc6af;
+  border-radius: 26px;
+  background: #fffef8;
+  overflow: hidden;
+  box-shadow:
+    0 5px 0 #cbd4bd,
+    0 16px 35px -25px #25351b60;
+  animation: surface-arrive 400ms var(--move-ease) backwards;
+}
+.identity-cover {
+  height: 150px;
+  background: #202d24;
+  position: relative;
+  overflow: hidden;
+}
+.cover-orbit {
+  position: absolute;
+  width: 340px;
+  height: 340px;
+  border: 1px solid #cce3a149;
+  border-radius: 50%;
+}
+.orbit-one {
+  right: -40px;
+  top: -225px;
+}
+.orbit-two {
+  right: 30px;
+  top: -155px;
+  border-width: 35px;
+  border-color: #d6fa6914;
+}
+.cover-symbol {
+  position: absolute;
+  right: 46px;
+  top: 10px;
+  color: #d6fa69;
+  font-size: 130px;
+  line-height: 1;
+  transform: rotate(-13deg);
+}
+.identity-body {
+  padding: 0 30px 30px;
+}
+.identity-toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-top: -52px;
+  position: relative;
+  gap: 15px;
+}
+.identity-toolbar > .avatar.large {
+  width: 112px;
+  height: 112px;
+  border: 6px solid #fffef8;
+  box-shadow: 0 2px 0 #b6c1a8;
+  border-radius: 30px;
+  font-size: 31px;
+}
+.identity-edit {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 39px;
+  margin-bottom: 5px;
+}
+.identity-name {
+  font-size: clamp(25px, 4vw, 36px);
+  margin: 25px 0 28px;
+  overflow-wrap: anywhere;
+  letter-spacing: -1.1px;
+}
+.identity-work {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+.identity-detail {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #e1e4d8;
+  border-radius: 16px;
+  background: #f6f6ed;
+  min-width: 0;
+  align-items: flex-start;
+}
+.identity-icon {
+  width: 39px;
+  height: 39px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  background: #e2ecca;
+  color: #4d6436;
+  border-radius: 12px;
+}
+.role-icon {
+  background: #e8dff4;
+  color: #6a5284;
+}
+.identity-detail > div {
+  min-width: 0;
+}
+.identity-detail small {
+  display: block;
+  font-size: 11px;
+  color: #737968;
+  margin-bottom: 5px;
+}
+.identity-detail strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.identity-detail .text-link {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  font-size: 12px;
+}
+.identity-socials {
+  border-top: 1px solid #e2e5d8;
+  margin-top: 24px;
+  padding-top: 20px;
+}
+.socials-label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 13px;
+}
+.socials-label > span {
+  color: #7a806e;
+  font-weight: 400;
+  font-size: 10px;
+}
+.social-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+.social-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 13px;
+  border: 1px solid #d1d8c4;
+  border-radius: 12px;
+  background: #fffef8;
+  font-size: 12px;
+  min-height: 42px;
+  transition:
+    transform 160ms ease,
+    background 160ms ease;
+}
+.social-button > span {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.social-button:hover {
+  background: #eef3e2;
+}
+.add-social {
+  border-style: dashed;
+  color: #626f51;
+}
+.profile-settings {
+  max-width: 780px;
+  margin: 0 auto;
+  background: #fffef8;
+  border: 1px solid #d1d8c4;
+  border-radius: 17px;
+}
+.profile-settings > summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 19px 22px;
+  font-size: 13px;
+  font-weight: 600;
+  list-style: none;
+}
+.profile-settings > summary::-webkit-details-marker {
+  display: none;
+}
+.profile-settings > summary svg:last-child {
+  margin-left: auto;
+  transition: transform 180ms ease;
+}
+.profile-settings[open] > summary svg:last-child {
+  transform: rotate(90deg);
+}
+.profile-settings > .settings-grid {
+  padding: 5px 18px 20px;
+}
+@media (max-width: 640px) {
+  .identity-cover {
+    height: 130px;
+  }
+  .identity-body {
+    padding: 0 20px 24px;
+  }
+  .identity-toolbar > .avatar.large {
+    width: 100px;
+    height: 100px;
+    border-radius: 27px;
+  }
+  .identity-toolbar {
+    margin-top: -45px;
+  }
+  .identity-work {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .identity-name {
+    font-size: 28px;
+    margin-top: 22px;
+    margin-bottom: 22px;
+  }
+  .identity-detail {
+    padding: 14px;
+  }
+  .cover-symbol {
+    right: 25px;
+    top: 7px;
+    font-size: 120px;
+  }
+  .profile-settings > .settings-grid {
+    padding: 3px 12px 15px;
+  }
+}
+.identity-detail strong {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

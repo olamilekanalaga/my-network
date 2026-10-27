@@ -89,3 +89,9 @@ test("demo defaults keep selected photos and optional links", () => {
   assert.equal(p.photo, "https://example.com/photo.jpg");
   assert.equal(p.links.length, 1);
 });
+
+test("only the bundled demo illustration is allowed as a local avatar path", () => {
+  assert.equal(safePhotoUrl("/demo-profile.svg"), "/demo-profile.svg");
+  assert.equal(safePhotoUrl("/untrusted.svg"), "");
+  assert.equal(safePhotoUrl("data:image/svg+xml,<svg/>"), "");
+});

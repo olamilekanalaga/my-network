@@ -58,7 +58,7 @@ import {
 import { PersonForm, OrganizationForm, OpportunityForm } from "./forms";
 import ImportWizard from "./import-wizard";
 import Assistant from "./assistant";
-import ContextCoach from "./context-coach";
+import SelfProfileCard from "./self-profile-card";
 import WalletHome from "./wallet-home";
 import {
   inContactLayer,
@@ -1020,207 +1020,169 @@ export default function Workspace({
           {tab === "Profile" && (
             <>
               {profile && (
-                <section className="profile-focus">
-                  <Avatar
-                    name={profile.name}
-                    photo={profile.photo}
-                    size="large"
-                  />
-                  <div>
-                    <h2>{profile.name}</h2>
-                    <p>
-                      {profile.role}
-                      {profile.location ? ` · ${profile.location}` : ""}
-                    </p>
-                    {profile.companyName && (
-                      <p>
-                        <b>{profile.companyName}</b>
-                      </p>
-                    )}
-                    {profile.roleDescription && (
-                      <p>{profile.roleDescription}</p>
-                    )}
-                    <p>{profile.headline}</p>
-                    {profile.links.map((link) => (
-                      <p key={link}>
-                        <SafeLink url={link} />
-                      </p>
-                    ))}
-                    <p>
-                      <b>Your next move:</b> {profile.goal}
-                    </p>
-                    <p>
-                      <b>You offer:</b> {profile.offers || "Not added yet"}
-                    </p>
-                    <p>
-                      <b>You need:</b> {profile.needs || "Not added yet"}
-                    </p>
-                  </div>
-                  <button className="secondary" onClick={onEditProfile}>
-                    Edit my profile
-                  </button>
-                </section>
+                <SelfProfileCard profile={profile} onEdit={onEditProfile} />
               )}
-              <ContextCoach
-                people={data.people}
-                onEdit={setEditPerson}
-                onImport={() => setImporting(true)}
-              />
-              <div className="settings-grid">
-                <section className="panel">
-                  <SectionTitle title="Account" />
-                  <Badge tone={mode === "demo" ? "amber" : "green"}>
-                    {mode === "demo"
-                      ? "Demo · this browser only"
-                      : "Authenticated · Supabase"}
-                  </Badge>
-                  <p className="muted">
-                    {mode === "demo"
-                      ? "Explore with fictional data. Demo storage is not an authenticated private vault."
-                      : store.email}
-                  </p>
-                  {onExit && (
-                    <button className="secondary" onClick={onExit}>
-                      {mode === "demo" ? "Leave demo to sign in" : "Sign out"}
-                    </button>
-                  )}
-                  <button
-                    className="secondary wide"
-                    disabled={!configured() || mode !== "live"}
-                    onClick={() => void connectGoogleContacts()}
-                  >
-                    Connect Google with Contacts permission
-                  </button>
-                  {!configured() && (
-                    <p className="small muted">
-                      Google account connections are not available yet. You can
-                      keep exploring the demo.
+              <details className="profile-settings">
+                <summary>
+                  <Settings size={17} /> Settings & privacy
+                  <ChevronRight size={16} />
+                </summary>
+                <div className="settings-grid">
+                  <section className="panel">
+                    <SectionTitle title="Account" />
+                    <Badge tone={mode === "demo" ? "amber" : "green"}>
+                      {mode === "demo"
+                        ? "Demo · this browser only"
+                        : "Authenticated · Supabase"}
+                    </Badge>
+                    <p className="muted">
+                      {mode === "demo"
+                        ? "Explore with fictional data. Demo storage is not an authenticated private vault."
+                        : store.email}
                     </p>
-                  )}
-                </section>
-                <section className="panel">
-                  <SectionTitle title="AI & privacy" />
-                  <label className="toggle">
-                    <input
-                      type="checkbox"
-                      checked={allowAI}
-                      onChange={(e) => {
-                        setAllowAI(e.target.checked);
-                        localStorage.setItem(
-                          "ni-ai-consent",
-                          String(e.target.checked),
-                        );
-                      }}
-                    />
-                    <span>
-                      <strong>Allow AI processing</strong>
-                      <small>
-                        In connected mode, send retrieved context to OpenAI on
-                        each question. No automatic messaging.
-                      </small>
-                    </span>
-                  </label>
-                  <label className="toggle">
-                    <input
-                      type="checkbox"
-                      checked={privateNotes}
-                      onChange={(e) => {
-                        setPrivateNotes(e.target.checked);
-                        localStorage.setItem(
-                          "ni-notes-consent",
-                          String(e.target.checked),
-                        );
-                      }}
-                    />
-                    <span>
-                      <strong>Include private notes in retrieval</strong>
-                      <small>
-                        Off by default. Includes conversation notes,
-                        transcripts, promises and private approved facts.
-                      </small>
-                    </span>
-                  </label>
-                  <p className="notice">
-                    Profile capability and need fields may still contain
-                    sensitive information. Review them before enabling AI.
-                    Public, private and shareable facts remain distinct.
-                  </p>
-                  <p className="small muted">
-                    OpenAI requests use store:false. Provider retention depends
-                    on your account terms. No sharing is automatic.
-                  </p>
-                </section>
-                <section className="panel">
-                  <SectionTitle title="Imports & backups" />
-                  <button
-                    className="secondary wide"
-                    onClick={() => setImporting(true)}
-                  >
-                    <Upload size={16} />
-                    Import contacts
-                  </button>
-                  <button
-                    className="secondary wide"
-                    onClick={() => exportData()}
-                  >
-                    <Download size={16} />
-                    Export full private backup
-                  </button>
-                  <button
-                    className="secondary wide"
-                    onClick={() => exportData(true)}
-                  >
-                    <ShieldCheck size={16} />
-                    Export approved sharing facts only
-                  </button>
-                  <label className="file-button secondary wide">
-                    <Upload size={16} />
-                    Restore a backup
-                    <input
-                      type="file"
-                      accept=".json"
-                      onChange={(e) => restore(e.target.files?.[0])}
-                    />
-                  </label>
-                  <p className="small muted">
-                    Full backups include private notes and contact details.
-                    Sharing exports include only facts you explicitly mark
-                    shareable.
-                  </p>
-                </section>
-                <section className="panel">
-                  <SectionTitle title="Data management" />
-                  <p className="muted">
-                    {mode === "demo"
-                      ? "Reset restores fictional examples and clears your demo edits."
-                      : "Delete removes all records in this account. Export a backup first."}
-                  </p>
-                  <button
-                    className="danger"
-                    disabled={busy}
-                    onClick={() => {
-                      if (
-                        confirm(
-                          mode === "demo"
-                            ? "Reset all demo edits?"
-                            : "Permanently delete all your network records?",
+                    {onExit && (
+                      <button className="secondary" onClick={onExit}>
+                        {mode === "demo" ? "Leave demo to sign in" : "Sign out"}
+                      </button>
+                    )}
+                    <button
+                      className="secondary wide"
+                      disabled={!configured() || mode !== "live"}
+                      onClick={() => void connectGoogleContacts()}
+                    >
+                      Connect Google with Contacts permission
+                    </button>
+                    {!configured() && (
+                      <p className="small muted">
+                        Google account connections are not available yet. You
+                        can keep exploring the demo.
+                      </p>
+                    )}
+                  </section>
+                  <section className="panel">
+                    <SectionTitle title="AI & privacy" />
+                    <label className="toggle">
+                      <input
+                        type="checkbox"
+                        checked={allowAI}
+                        onChange={(e) => {
+                          setAllowAI(e.target.checked);
+                          localStorage.setItem(
+                            "ni-ai-consent",
+                            String(e.target.checked),
+                          );
+                        }}
+                      />
+                      <span>
+                        <strong>Allow AI processing</strong>
+                        <small>
+                          In connected mode, send retrieved context to OpenAI on
+                          each question. No automatic messaging.
+                        </small>
+                      </span>
+                    </label>
+                    <label className="toggle">
+                      <input
+                        type="checkbox"
+                        checked={privateNotes}
+                        onChange={(e) => {
+                          setPrivateNotes(e.target.checked);
+                          localStorage.setItem(
+                            "ni-notes-consent",
+                            String(e.target.checked),
+                          );
+                        }}
+                      />
+                      <span>
+                        <strong>Include private notes in retrieval</strong>
+                        <small>
+                          Off by default. Includes conversation notes,
+                          transcripts, promises and private approved facts.
+                        </small>
+                      </span>
+                    </label>
+                    <p className="notice">
+                      Profile capability and need fields may still contain
+                      sensitive information. Review them before enabling AI.
+                      Public, private and shareable facts remain distinct.
+                    </p>
+                    <p className="small muted">
+                      OpenAI requests use store:false. Provider retention
+                      depends on your account terms. No sharing is automatic.
+                    </p>
+                  </section>
+                  <section className="panel">
+                    <SectionTitle title="Imports & backups" />
+                    <button
+                      className="secondary wide"
+                      onClick={() => setImporting(true)}
+                    >
+                      <Upload size={16} />
+                      Import contacts
+                    </button>
+                    <button
+                      className="secondary wide"
+                      onClick={() => exportData()}
+                    >
+                      <Download size={16} />
+                      Export full private backup
+                    </button>
+                    <button
+                      className="secondary wide"
+                      onClick={() => exportData(true)}
+                    >
+                      <ShieldCheck size={16} />
+                      Export approved sharing facts only
+                    </button>
+                    <label className="file-button secondary wide">
+                      <Upload size={16} />
+                      Restore a backup
+                      <input
+                        type="file"
+                        accept=".json"
+                        onChange={(e) => restore(e.target.files?.[0])}
+                      />
+                    </label>
+                    <p className="small muted">
+                      Full backups include private notes and contact details.
+                      Sharing exports include only facts you explicitly mark
+                      shareable.
+                    </p>
+                  </section>
+                  <section className="panel">
+                    <SectionTitle title="Data management" />
+                    <p className="muted">
+                      {mode === "demo"
+                        ? "Reset restores fictional examples and clears your demo edits."
+                        : "Delete removes all records in this account. Export a backup first."}
+                    </p>
+                    <button
+                      className="danger"
+                      disabled={busy}
+                      onClick={() => {
+                        if (
+                          confirm(
+                            mode === "demo"
+                              ? "Reset all demo edits?"
+                              : "Permanently delete all your network records?",
+                          )
                         )
-                      )
-                        store.run(() => store.reset());
-                    }}
-                  >
-                    <Trash2 size={16} />
-                    {mode === "demo"
-                      ? "Reset demo workspace"
-                      : "Delete all network records"}
-                  </button>
-                  <p className="small muted">
-                    Account deletion is not included. Use Supabase
-                    administration after clearing records; see the handoff
-                    guide.
-                  </p>
-                </section>
-              </div>
+                          store.run(() => store.reset());
+                      }}
+                    >
+                      <Trash2 size={16} />
+                      {mode === "demo"
+                        ? "Reset demo workspace"
+                        : "Delete all network records"}
+                    </button>
+                    <p className="small muted">
+                      Account deletion is not included. Use Supabase
+                      administration after clearing records; see the handoff
+                      guide.
+                    </p>
+                  </section>
+                </div>
+              </details>
             </>
           )}
         </main>

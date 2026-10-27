@@ -13,6 +13,7 @@ import {
   roleDraftSchema,
   mergeDemoProfile,
   migrateProfileRole,
+  demoProfileForDisplay,
   demoProfileKey,
   entryModeKey,
   readSelfProfile,
@@ -54,6 +55,7 @@ export default function EntryFlow({ screen }: { screen: Screen }) {
             saved = readSelfProfile(
               JSON.parse(localStorage.getItem(demoProfileKey) || "null"),
             );
+            if (saved) saved = demoProfileForDisplay(saved);
           } catch {
             /* A malformed profile returns to setup without touching contacts. */
           }
@@ -88,6 +90,8 @@ export default function EntryFlow({ screen }: { screen: Screen }) {
               if (validRole.success) {
                 const fields = [
                   "name",
+                  "displayName",
+                  "workCompany",
                   "headline",
                   "location",
                   "offers",
@@ -106,9 +110,9 @@ export default function EntryFlow({ screen }: { screen: Screen }) {
                   if (typeof raw[field] === "string")
                     draft[field] = raw[field].slice(
                       0,
-                      field === "name"
+                      field === "name" || field === "displayName"
                         ? 100
-                        : field === "headline"
+                        : field === "headline" || field === "workCompany"
                           ? 150
                           : field === "location"
                             ? 120
@@ -324,7 +328,7 @@ export default function EntryFlow({ screen }: { screen: Screen }) {
         )}
         <Workspace
           profile={profile}
-          onEditProfile={() => router.push("/onboarding")}
+          onEditProfile={() => router.push("/onboarding/profile")}
           onExit={() => void exit()}
         />
       </>
@@ -497,11 +501,20 @@ export default function EntryFlow({ screen }: { screen: Screen }) {
                 <h2>Your profile. Your starting point.</h2>
                 <p>Keep it simple. Your people will bring the rest.</p>
                 <PhotoPicker
-                  name={profile.name}
+                  name={profile.displayName || profile.name}
                   value={profile.photo}
                   onChange={(photo) => set("photo", photo)}
                   onBusyChange={setPhotoBusy}
                 />
+                <Field label="Display name">
+                  <input
+                    maxLength={100}
+                    placeholder="⭕️La_Crrypt💰₿"
+                    autoComplete="nickname"
+                    value={profile.displayName}
+                    onChange={(e) => set("displayName", e.target.value)}
+                  />
+                </Field>
                 <div className="form-grid">
                   <Field label="Your name">
                     <input
@@ -512,16 +525,25 @@ export default function EntryFlow({ screen }: { screen: Screen }) {
                       onChange={(e) => set("name", e.target.value)}
                     />
                   </Field>
-                  <Field label="Your title (optional)">
+                  <Field label="Company you work with (optional)">
                     <input
-                      autoComplete="organization-title"
+                      autoComplete="organization"
                       maxLength={150}
-                      placeholder="Founder, designer, talent partner…"
-                      value={profile.headline}
-                      onChange={(e) => set("headline", e.target.value)}
+                      placeholder="Company or organisation"
+                      value={profile.workCompany}
+                      onChange={(e) => set("workCompany", e.target.value)}
                     />
                   </Field>
                 </div>
+                <Field label="Position or role (optional)">
+                  <input
+                    autoComplete="organization-title"
+                    maxLength={150}
+                    placeholder="Founder, data analyst, business developer…"
+                    value={profile.headline}
+                    onChange={(e) => set("headline", e.target.value)}
+                  />
+                </Field>
                 <Field label="Where are you based? (optional)">
                   <input
                     autoComplete="address-level2"

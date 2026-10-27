@@ -1,6 +1,7 @@
 import { z } from "zod";
 export function safePhotoUrl(value: string): string {
   if (!value || value.length > 18000) return "";
+  if (value === "/demo-profile.svg") return value;
   if (/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(value))
     return value;
   try {

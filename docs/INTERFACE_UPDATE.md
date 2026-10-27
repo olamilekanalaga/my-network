@@ -73,3 +73,13 @@ Both contact and self-profile editors have optional website/social links. Bare d
 Validation: 34 automated tests and the production build passed. Added coverage for image bounds/protocols, link normalization/protocols, removed-role migration, and retaining optional media in demo profiles.
 
 Browser validation passed for simplified dropdown choices, business-development talent examples, self-profile and contact photo upload/preview/persistence/removal, onboarding back/next preservation, normalized optional links, removed list pills, mobile overflow, and browser runtime errors. Shared field labels now explicitly name their controls so prefilled textarea contents do not become part of the accessible label.
+
+## Personal identity card
+
+Profile now centers on a visual identity card with a decorative cover, large avatar, editable display name, company, position/role, and optional social buttons. The former goal/offer/need paragraphs and contact-context coaching are removed from this view. Account, privacy, imports/backups, and deletion controls remain in a collapsed Settings & privacy section. Edit opens `/onboarding/profile` directly; the existing back button still returns to role selection if needed.
+
+Added optional `displayName` and `workCompany` fields to the existing self-profile format, with backward-compatible defaults and the same browser-local or authenticated account-metadata persistence. The personal form includes display name, company, position/role, photo selection, and links. Saved company/role values appear as icon tiles. Social links are rendered as named platform/website buttons; none are fabricated for the user.
+
+A bundled fictional SVG avatar and the display name `⭕️La_Crrypt💰₿` provide the default demo identity. Existing untouched Alex Morgan demo profiles get that presentation; custom names, display names, uploaded photos, employers, and roles are preserved. The avatar validator permits this single bundled SVG path while continuing to reject user-supplied SVG data URLs and arbitrary local paths.
+
+Validation: production build and TypeScript passed. Browser checks passed for default demo portrait/name, card layout without prior report copy/coaching, collapsed settings, direct editing, saved display name/company/role/social buttons, reload persistence, mobile overflow, and browser runtime errors.

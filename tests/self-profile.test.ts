@@ -7,6 +7,7 @@ import {
   roleStepSchema,
   roleDraftSchema,
   mergeDemoProfile,
+  demoProfileForDisplay,
 } from "../lib/self-profile";
 test("self profile requires a real name, valid audience, and a goal", () => {
   assert.equal(readSelfProfile(blankSelfProfile()), null);
@@ -119,4 +120,51 @@ test("blank demo setup uses a fictional profile and partial input wins over defa
   assert.equal(partial.companyName, "");
   assert.equal(roleDraftSchema.safeParse(blankSelfProfile()).success, true);
   assert.equal(roleStepSchema.safeParse(blankSelfProfile()).success, false);
+});
+
+test("identity details support a distinct display name and employer", () => {
+  const p = selfProfileSchema.parse({
+    ...blankSelfProfile(),
+    name: "Alex Morgan",
+    displayName: "⭕️La_Crrypt💰₿",
+    workCompany: "Studio North",
+    headline: "Community lead",
+    goal: "Meet people",
+  });
+  assert.equal(p.displayName, "⭕️La_Crrypt💰₿");
+  assert.equal(p.name, "Alex Morgan");
+  assert.equal(p.workCompany, "Studio North");
+  const demo = mergeDemoProfile(blankSelfProfile());
+  assert.equal(demo.displayName, "⭕️La_Crrypt💰₿");
+  assert.equal(demo.photo, "/demo-profile.svg");
+  const custom = mergeDemoProfile({
+    ...blankSelfProfile(),
+    displayName: "My handle",
+    workCompany: "My workplace",
+  });
+  assert.equal(custom.displayName, "My handle");
+  assert.equal(custom.workCompany, "My workplace");
+});
+
+test("demo identity upgrades the stock sample without replacing custom details", () => {
+  const stock = demoProfileForDisplay({
+    ...blankSelfProfile(),
+    name: "Alex Morgan",
+    goal: "Meet people",
+  });
+  assert.equal(stock.displayName, "⭕️La_Crrypt💰₿");
+  assert.equal(stock.photo, "/demo-profile.svg");
+  assert.equal(stock.workCompany, "Studio North");
+  const custom = demoProfileForDisplay({
+    ...blankSelfProfile(),
+    name: "Jamie",
+    displayName: "Jay",
+    workCompany: "My employer",
+    headline: "Engineer",
+    goal: "Meet people",
+  });
+  assert.equal(custom.displayName, "Jay");
+  assert.equal(custom.workCompany, "My employer");
+  assert.equal(custom.headline, "Engineer");
+  assert.equal(custom.photo, "");
 });

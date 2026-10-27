@@ -29,6 +29,7 @@ import {
   MoreHorizontal,
   MessageCircle,
   UserRound,
+  StickyNote,
 } from "lucide-react";
 import { useStore, download } from "@/lib/store";
 import { browserDb, configured } from "@/lib/supabase";
@@ -58,6 +59,16 @@ import {
 import { PersonForm, OrganizationForm, OpportunityForm } from "./forms";
 import ImportWizard from "./import-wizard";
 import Assistant from "./assistant";
+import FAQ from "./faq";
+import NotesBoard from "./notes-board";
+import { allNotes, readNote, type Note } from "@/lib/notes";
+import {
+  companyNotes,
+  companyLinks,
+  linkedCompany,
+  companyForDraft,
+  type CompanyDraft,
+} from "@/lib/company";
 import SelfProfileCard from "./self-profile-card";
 import ThemePicker from "./theme-picker";
 import { applyTheme, type ThemeId } from "@/lib/themes";
@@ -75,7 +86,8 @@ const nav = [
   { name: "Home", icon: Home },
   { name: "Contacts", icon: Users },
   { name: "Ask My network", icon: MessageCircle },
-  { name: "Profile", icon: UserRound },
+  { name: "Notes", icon: StickyNote },
+  { name: "Notifications", icon: Bell },
 ];
 const money = (n: number | null) =>
   n === null
@@ -103,7 +115,10 @@ export default function Workspace({
     id: string;
     question: string;
   } | null>(null);
-  const [showFollowups, setShowFollowups] = useState(false);
+  const [noteCompose, setNoteCompose] = useState<{
+    id: string;
+    contactId: string | null;
+  } | null>(null);
   const [nextAction, setNextAction] = useState<{
     person: Person;
     goal: string;
@@ -136,9 +151,12 @@ export default function Workspace({
     const selectedView =
       view === "People" ? "Contacts" : view === "Settings" ? "Profile" : view;
     if (
-      [...nav.map((n) => n.name), "Network", "Opportunities"].includes(
-        selectedView || "",
-      )
+      [
+        ...nav.map((n) => n.name),
+        "Network",
+        "Opportunities",
+        "Profile",
+      ].includes(selectedView || "")
     )
       setTab(selectedView!);
     setAllowAI(localStorage.getItem("ni-ai-consent") === "true");
@@ -198,9 +216,26 @@ export default function Workspace({
     setNotice(text);
     setTimeout(() => setNotice(""), 4000);
   }
-  function savePerson(x: Person) {
+  function savePerson(x: Person, company?: CompanyDraft) {
     store.run(async () => {
       await store.save("people", x);
+      if (company) {
+        const prior = linkedCompany(x.id, data);
+        if (!company.name.trim() && !company.links.length) {
+          if (prior) await store.remove("affiliations", prior.affiliation.id);
+        } else {
+          const existing = data.organizations.find((o) => o.id === company.id);
+          const organization = companyForDraft(company, existing);
+          await store.save("organizations", organization);
+          if (!prior || prior.company.id !== organization.id)
+            await store.save("affiliations", {
+              id: prior?.affiliation.id || uid(),
+              person_id: x.id,
+              organization_id: organization.id,
+              role: x.position,
+            });
+        }
+      }
       setEditPerson(null);
       setPerson(x.id);
       saved("Profile saved");
@@ -373,6 +408,64 @@ export default function Workspace({
       saved("Record saved");
     });
   }
+  function FollowupsPanel() {
+    return (
+      <section className="panel" id="followups">
+        <SectionTitle
+          title="Follow-ups"
+          action={
+            <button
+              className="icon"
+              aria-label="Add follow-up"
+              onClick={() => setDialog("followup")}
+            >
+              <Plus size={17} />
+            </button>
+          }
+        />
+        {followups.map((f) => (
+          <div className="followup" key={f.id}>
+            <button
+              className="check-button"
+              aria-label={`Complete ${f.text}`}
+              onClick={() =>
+                store.run(async () => {
+                  if (f.activity) {
+                    const a = data.activities.find((a) => a.id === f.id)!;
+                    await store.save("activities", {
+                      ...a,
+                      done: true,
+                    });
+                  } else {
+                    const o = data.opportunities.find((o) => o.id === f.id)!;
+                    await store.save("opportunities", {
+                      ...o,
+                      follow_up: "",
+                    });
+                  }
+                })
+              }
+            >
+              <Check size={12} />
+            </button>
+            <button
+              className="followup-text"
+              onClick={() => {
+                if (f.opp)
+                  setEditOpp(
+                    data.opportunities.find((o) => o.id === f.opp) || false,
+                  );
+              }}
+            >
+              <strong>{f.text}</strong>
+              <small>{f.date || "No date set"}</small>
+            </button>
+          </div>
+        ))}
+        {!followups.length && <Empty>No pending follow-ups.</Empty>}
+      </section>
+    );
+  }
   if (!ready)
     return (
       <div className="loading">
@@ -403,6 +496,7 @@ export default function Workspace({
           {nav.map((n) => (
             <button
               key={n.name}
+              aria-label={n.name}
               className={
                 tab === n.name ||
                 (n.name === "Contacts" &&
@@ -417,8 +511,8 @@ export default function Workspace({
             >
               <n.icon size={19} />
               {n.name}
-              {n.name === "Opportunities" && (
-                <span className="nav-count">{data.opportunities.length}</span>
+              {n.name === "Notifications" && followups.length > 0 && (
+                <span className="nav-count">{followups.length}</span>
               )}
             </button>
           ))}
@@ -476,10 +570,21 @@ export default function Workspace({
                 <LogOut size={18} />
               </button>
             )}
-            <Avatar
-              name={profile?.name || "Your Workspace"}
-              photo={profile?.photo}
-            />
+            <button
+              className="profile-trigger"
+              aria-label="Open profile"
+              aria-pressed={tab === "Profile"}
+              onClick={() => setTab("Profile")}
+            >
+              {profile?.photo || profile?.name || profile?.displayName ? (
+                <Avatar
+                  name={profile?.displayName || profile?.name || ""}
+                  photo={profile?.photo}
+                />
+              ) : (
+                <UserRound size={22} />
+              )}
+            </button>
           </div>
         </header>
         <main>
@@ -530,8 +635,39 @@ export default function Workspace({
                 setQuestionRequest({ id: uid(), question });
                 setTab("Ask My network");
               }}
-              onFollowups={() => setShowFollowups(true)}
+              onFollowups={() => setTab("Notifications")}
+              onNotes={() => setTab("Notes")}
             />
+          )}
+          <div hidden={tab !== "Notes"}>
+            <NotesBoard
+              activities={data.activities}
+              people={data.people}
+              compose={noteCompose}
+              onSave={(activity) => store.save("activities", activity)}
+              onDelete={(id) => store.remove("activities", id)}
+              onContact={openPerson}
+              onUseForContact={(note) => {
+                const contact = data.people.find(
+                  (p) => p.id === note.contactId,
+                );
+                if (contact) {
+                  setPerson(null);
+                  setEditPerson({
+                    ...contact,
+                    notes: [contact.notes, note.body]
+                      .filter(Boolean)
+                      .join("\n\n"),
+                  });
+                }
+              }}
+            />
+          </div>
+          {tab === "Notifications" && (
+            <div className="notifications-page">
+              <h1>Notifications</h1>
+              <FollowupsPanel />
+            </div>
           )}
           <div hidden={tab !== "Ask My network"}>
             <div className="page-heading">
@@ -1200,6 +1336,7 @@ export default function Workspace({
                 : ""
             }
             key={n.name}
+            aria-label={n.name}
             onClick={() => {
               setTab(n.name);
               setSearch("");
@@ -1207,71 +1344,15 @@ export default function Workspace({
             }}
           >
             <n.icon size={21} />
-            <span>{n.name === "Profile" ? "Profile" : n.name}</span>
+            <span>{n.name}</span>
+            {n.name === "Notifications" && followups.length > 0 && (
+              <i className="nav-notification-count" aria-hidden="true">
+                {followups.length}
+              </i>
+            )}
           </button>
         ))}
       </nav>
-      {showFollowups && (
-        <Modal title="Your follow-ups" onClose={() => setShowFollowups(false)}>
-          {" "}
-          <section className="panel" id="followups">
-            <SectionTitle
-              title="Keep things moving"
-              action={
-                <button
-                  className="icon"
-                  aria-label="Add follow-up"
-                  onClick={() => setDialog("followup")}
-                >
-                  <Plus size={17} />
-                </button>
-              }
-            />
-            {followups.slice(0, 5).map((f) => (
-              <div className="followup" key={f.id}>
-                <button
-                  className="check-button"
-                  aria-label={`Complete ${f.text}`}
-                  onClick={() =>
-                    store.run(async () => {
-                      if (f.activity) {
-                        const a = data.activities.find((a) => a.id === f.id)!;
-                        await store.save("activities", {
-                          ...a,
-                          done: true,
-                        });
-                      } else {
-                        const o = data.opportunities.find(
-                          (o) => o.id === f.id,
-                        )!;
-                        await store.save("opportunities", {
-                          ...o,
-                          follow_up: "",
-                        });
-                      }
-                    })
-                  }
-                >
-                  <Check size={12} />
-                </button>
-                <button
-                  className="followup-text"
-                  onClick={() => {
-                    if (f.opp)
-                      setEditOpp(
-                        data.opportunities.find((o) => o.id === f.opp) || false,
-                      );
-                  }}
-                >
-                  <strong>{f.text}</strong>
-                  <small>{f.date || "No date set"}</small>
-                </button>
-              </div>
-            ))}
-            {!followups.length && <Empty>No pending follow-ups.</Empty>}
-          </section>
-        </Modal>
-      )}
       {p && (
         <Modal title="Relationship profile" onClose={() => setPerson(null)}>
           <div className="profile-head">
@@ -1294,289 +1375,318 @@ export default function Workspace({
             </Badge>
             <Badge>Strength {p.strength}/5</Badge>
           </div>
-          <div className="profile-section">
-            <div className="two-col">
-              <div>
-                <h4>What they need</h4>
-                <p>{p.needs || "Not recorded yet"}</p>
-              </div>
-              <div>
-                <h4>What they can offer</h4>
-                <p>{p.offers || p.services || "Not recorded yet"}</p>
-              </div>
-            </div>
-            {p.services && (
-              <>
-                <h4>Products & services they sell</h4>
-                <p>{p.services}</p>
-              </>
-            )}
-            {p.building && (
-              <>
-                <h4>Building</h4>
-                <p>{p.building}</p>
-              </>
-            )}
-            {p.resources && (
-              <>
-                <h4>Resources & access</h4>
-                <p>{p.resources}</p>
-              </>
-            )}
-            <div className="chips">
-              {p.skills.map((s) => (
-                <Badge key={s}>{s}</Badge>
-              ))}
-            </div>
+          <div className="contact-primary-actions">
+            <button
+              className="primary"
+              onClick={() => setNextAction({ person: p, goal: "" })}
+            >
+              Take action
+            </button>
+            <button
+              className="secondary"
+              onClick={() => {
+                setNoteCompose({ id: uid(), contactId: p.id });
+                setPerson(null);
+                setTab("Notes");
+              }}
+            >
+              <StickyNote size={15} />
+              Add note
+            </button>
           </div>
-          <div className="profile-section">
-            <SectionTitle
-              title="Context & contact"
-              action={
-                <button
-                  className="primary"
-                  onClick={() => setNextAction({ person: p, goal: "" })}
-                >
-                  Take action
-                </button>
-              }
-            />
-            <p>
-              {p.email} {p.phone && `· ${p.phone}`}
-            </p>
-            <p className="small muted">
-              Met: {p.met || "Not recorded"} {p.met_date}
-            </p>
-            {p.links.map((l) => (
-              <div key={l}>
-                <SafeLink url={l} />
-              </div>
-            ))}
-            <h4>Private conversation notes</h4>
-            <p className="prewrap">{p.notes || "No notes yet."}</p>
-            {p.transcript && (
-              <>
-                <h4>Voice transcript</h4>
-                <p className="prewrap">{p.transcript}</p>
-              </>
-            )}
-            {p.promises && (
-              <>
-                <h4>Promises & agreements</h4>
-                <p>{p.promises}</p>
-              </>
-            )}
-            <small className="muted">
-              Source: {p.source} · Updated {p.updated_at.slice(0, 10)}
-              <br />
-              Sharing: {p.consent}
-            </small>
-          </div>
-          <div className="profile-section">
-            <SectionTitle
-              title="Companies, communities & events"
-              action={
-                <button
-                  className="text-link"
-                  onClick={() => setDialog("affiliation")}
-                >
-                  + Associate
-                </button>
-              }
-            />
-            {data.affiliations
-              .filter((a) => a.person_id === p.id)
-              .map((a) => (
-                <div className="association" key={a.id}>
+          <FAQ
+            key={p.id}
+            items={[
+              {
+                id: "needs",
+                question: "What do they need?",
+                answer: <p>{p.needs || "Not added yet."}</p>,
+              },
+              {
+                id: "offers",
+                question: "What can they offer?",
+                answer: <p>{p.offers || p.services || "Not added yet."}</p>,
+              },
+              {
+                id: "building",
+                question: "What are they building?",
+                answer: <p>{p.building || "Not added yet."}</p>,
+              },
+              {
+                id: "resources",
+                question: "What skills or resources do they have?",
+                answer: (
+                  <>
+                    <p>{p.resources || ""}</p>
+                    <p>
+                      {p.skills.filter(Boolean).join(" · ") || "Not added yet."}
+                    </p>
+                  </>
+                ),
+              },
+              {
+                id: "contact",
+                question: "How do you know them?",
+                answer: (
+                  <>
+                    <p>
+                      {p.met || "Not added yet."}
+                      {p.met_date ? ` · ${p.met_date}` : ""}
+                    </p>
+                    <p>
+                      {p.email} {p.phone}
+                    </p>
+                    {p.links.map((url, index) => (
+                      <p key={index}>
+                        <SafeLink url={url} />
+                      </p>
+                    ))}
+                  </>
+                ),
+              },
+              {
+                id: "notes",
+                question: "Private notes",
+                answer: (
+                  <>
+                    <p className="prewrap">{p.notes || "No notes yet."}</p>
+                    {p.transcript && <p className="prewrap">{p.transcript}</p>}
+                    {p.promises && <p>{p.promises}</p>}
+                    <button
+                      className="text-link"
+                      onClick={() => {
+                        setNoteCompose({ id: uid(), contactId: p.id });
+                        setPerson(null);
+                        setTab("Notes");
+                      }}
+                    >
+                      Add a note ·{" "}
+                      {
+                        allNotes(data.activities).filter(
+                          (n) => n.contactId === p.id,
+                        ).length
+                      }{" "}
+                      saved
+                    </button>
+                  </>
+                ),
+              },
+            ]}
+          />
+          <details className="contact-more">
+            <summary>
+              More details
+              <ChevronRight size={16} />
+            </summary>
+            <div className="profile-section">
+              <SectionTitle
+                title="Companies, communities & events"
+                action={
                   <button
                     className="text-link"
-                    onClick={() => {
-                      setOrg(a.organization_id);
-                      setPerson(null);
-                    }}
+                    onClick={() => setDialog("affiliation")}
                   >
-                    {personName(a.organization_id)} <ArrowUpRight size={13} />
+                    + Associate
                   </button>
-                  <span>{a.role}</span>
+                }
+              />
+              {data.affiliations
+                .filter((a) => a.person_id === p.id)
+                .map((a) => (
+                  <div className="association" key={a.id}>
+                    <button
+                      className="text-link"
+                      onClick={() => {
+                        setOrg(a.organization_id);
+                        setPerson(null);
+                      }}
+                    >
+                      {personName(a.organization_id)} <ArrowUpRight size={13} />
+                    </button>
+                    <span>{a.role}</span>
+                    <button
+                      className="icon"
+                      aria-label="Remove association"
+                      onClick={() =>
+                        store.run(() => store.remove("affiliations", a.id))
+                      }
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                ))}
+            </div>
+            <div className="profile-section">
+              <SectionTitle
+                title="Public information & saved facts"
+                action={
                   <button
-                    className="icon"
-                    aria-label="Remove association"
-                    onClick={() =>
-                      store.run(() => store.remove("affiliations", a.id))
-                    }
+                    className="text-link"
+                    onClick={() => setDialog("fact")}
                   >
-                    <Trash2 size={13} />
+                    + Review public text
                   </button>
-                </div>
-              ))}
-          </div>
-          <div className="profile-section">
-            <SectionTitle
-              title="Public information & saved facts"
-              action={
-                <button className="text-link" onClick={() => setDialog("fact")}>
-                  + Review public text
-                </button>
-              }
-            />
-            <p className="small muted">
-              Paste information from a permitted public source. New facts
-              require your approval and do not create introduction rights.
-            </p>
-            {data.facts
-              .filter((f) => f.person_id === p.id)
-              .map((f) => (
-                <div className="evidence" key={f.id}>
-                  <Badge tone={f.status === "pending" ? "amber" : "green"}>
-                    {f.status === "pending"
-                      ? "Pending approval"
-                      : f.verification}
-                  </Badge>
-                  <p>{f.text}</p>
-                  {f.source_url && <SafeLink url={f.source_url} />}
-                  <small>
-                    Observed {f.observed_at} · confidence{" "}
-                    {Math.round(f.confidence * 100)}%
-                  </small>
-                  <div className="actions">
-                    {f.status === "pending" && (
-                      <button
-                        className="secondary"
-                        onClick={() =>
+                }
+              />
+              <p className="small muted">
+                Paste information from a permitted public source. New facts
+                require your approval and do not create introduction rights.
+              </p>
+              {data.facts
+                .filter((f) => f.person_id === p.id)
+                .map((f) => (
+                  <div className="evidence" key={f.id}>
+                    <Badge tone={f.status === "pending" ? "amber" : "green"}>
+                      {f.status === "pending"
+                        ? "Pending approval"
+                        : f.verification}
+                    </Badge>
+                    <p>{f.text}</p>
+                    {f.source_url && <SafeLink url={f.source_url} />}
+                    <small>
+                      Observed {f.observed_at} · confidence{" "}
+                      {Math.round(f.confidence * 100)}%
+                    </small>
+                    <div className="actions">
+                      {f.status === "pending" && (
+                        <button
+                          className="secondary"
+                          onClick={() =>
+                            store.run(() =>
+                              store.save("facts", { ...f, status: "approved" }),
+                            )
+                          }
+                        >
+                          Approve fact
+                        </button>
+                      )}
+                      <select
+                        aria-label="Fact sharing visibility"
+                        value={f.visibility}
+                        onChange={(e) =>
                           store.run(() =>
-                            store.save("facts", { ...f, status: "approved" }),
+                            store.save("facts", {
+                              ...f,
+                              visibility: e.target.value as Fact["visibility"],
+                            }),
                           )
                         }
                       >
-                        Approve fact
+                        {["private", "public", "shareable"].map((x) => (
+                          <option key={x}>{x}</option>
+                        ))}
+                      </select>
+                      <button
+                        className="icon"
+                        aria-label="Delete fact"
+                        onClick={() =>
+                          store.run(() => store.remove("facts", f.id))
+                        }
+                      >
+                        <Trash2 size={14} />
                       </button>
-                    )}
-                    <select
-                      aria-label="Fact sharing visibility"
-                      value={f.visibility}
+                    </div>
+                  </div>
+                ))}
+            </div>
+            <div className="profile-section">
+              <SectionTitle
+                title="Business in both directions"
+                action={
+                  <button
+                    className="text-link"
+                    onClick={() => setDialog("transaction")}
+                  >
+                    + Transaction
+                  </button>
+                }
+              />
+              {data.transactions
+                .filter((t) => t.person_id === p.id)
+                .map((t) => (
+                  <div className="transaction" key={t.id}>
+                    <div>
+                      <strong>{t.description}</strong>
+                      <small>
+                        {t.date} ·{" "}
+                        {t.direction === "received"
+                          ? "They paid you"
+                          : "You paid them"}
+                      </small>
+                      <p>{t.notes}</p>
+                    </div>
+                    <b>
+                      {t.currency} {t.amount}
+                    </b>
+                    <button
+                      className="icon"
+                      aria-label="Delete transaction"
+                      onClick={() =>
+                        store.run(() => store.remove("transactions", t.id))
+                      }
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                ))}
+              <p className="small muted">
+                Needs: {p.needs || "Not documented"}
+                <br />
+                They sell: {p.services || "Not documented"}
+              </p>
+              {data.opportunities
+                .filter((o) => o.person_ids.includes(p.id))
+                .map((o) => (
+                  <button
+                    className="person-row wide"
+                    key={o.id}
+                    onClick={() => setEditOpp(o)}
+                  >
+                    <BriefcaseBusiness size={17} />
+                    {o.title}
+                    <Badge>{o.status}</Badge>
+                  </button>
+                ))}
+            </div>
+            <div className="profile-section">
+              <SectionTitle
+                title="Follow-up history"
+                action={
+                  <button
+                    className="text-link"
+                    onClick={() => setDialog("followup")}
+                  >
+                    + Follow-up
+                  </button>
+                }
+              />
+              {data.activities
+                .filter((a) => a.person_id === p.id && !readNote(a))
+                .map((a) => (
+                  <div className="followup" key={a.id}>
+                    <input
+                      type="checkbox"
+                      aria-label={`Complete ${a.text}`}
+                      checked={a.done}
                       onChange={(e) =>
                         store.run(() =>
-                          store.save("facts", {
-                            ...f,
-                            visibility: e.target.value as Fact["visibility"],
+                          store.save("activities", {
+                            ...a,
+                            done: e.target.checked,
                           }),
                         )
                       }
-                    >
-                      {["private", "public", "shareable"].map((x) => (
-                        <option key={x}>{x}</option>
-                      ))}
-                    </select>
-                    <button
-                      className="icon"
-                      aria-label="Delete fact"
-                      onClick={() =>
-                        store.run(() => store.remove("facts", f.id))
-                      }
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    />
+                    <span>
+                      {a.text}
+                      <small>
+                        {a.date} · {a.done ? "Completed" : "Pending"}
+                      </small>
+                    </span>
                   </div>
-                </div>
-              ))}
-          </div>
-          <div className="profile-section">
-            <SectionTitle
-              title="Business in both directions"
-              action={
-                <button
-                  className="text-link"
-                  onClick={() => setDialog("transaction")}
-                >
-                  + Transaction
-                </button>
-              }
-            />
-            {data.transactions
-              .filter((t) => t.person_id === p.id)
-              .map((t) => (
-                <div className="transaction" key={t.id}>
-                  <div>
-                    <strong>{t.description}</strong>
-                    <small>
-                      {t.date} ·{" "}
-                      {t.direction === "received"
-                        ? "They paid you"
-                        : "You paid them"}
-                    </small>
-                    <p>{t.notes}</p>
-                  </div>
-                  <b>
-                    {t.currency} {t.amount}
-                  </b>
-                  <button
-                    className="icon"
-                    aria-label="Delete transaction"
-                    onClick={() =>
-                      store.run(() => store.remove("transactions", t.id))
-                    }
-                  >
-                    <Trash2 size={13} />
-                  </button>
-                </div>
-              ))}
-            <p className="small muted">
-              Needs: {p.needs || "Not documented"}
-              <br />
-              They sell: {p.services || "Not documented"}
-            </p>
-            {data.opportunities
-              .filter((o) => o.person_ids.includes(p.id))
-              .map((o) => (
-                <button
-                  className="person-row wide"
-                  key={o.id}
-                  onClick={() => setEditOpp(o)}
-                >
-                  <BriefcaseBusiness size={17} />
-                  {o.title}
-                  <Badge>{o.status}</Badge>
-                </button>
-              ))}
-          </div>
-          <div className="profile-section">
-            <SectionTitle
-              title="Follow-up history"
-              action={
-                <button
-                  className="text-link"
-                  onClick={() => setDialog("followup")}
-                >
-                  + Follow-up
-                </button>
-              }
-            />
-            {data.activities
-              .filter((a) => a.person_id === p.id)
-              .map((a) => (
-                <div className="followup" key={a.id}>
-                  <input
-                    type="checkbox"
-                    aria-label={`Complete ${a.text}`}
-                    checked={a.done}
-                    onChange={(e) =>
-                      store.run(() =>
-                        store.save("activities", {
-                          ...a,
-                          done: e.target.checked,
-                        }),
-                      )
-                    }
-                  />
-                  <span>
-                    {a.text}
-                    <small>
-                      {a.date} · {a.done ? "Completed" : "Pending"}
-                    </small>
-                  </span>
-                </div>
-              ))}
-          </div>
+                ))}
+            </div>
+          </details>
           <button
             className="danger"
             onClick={() => {
@@ -1609,13 +1719,32 @@ export default function Workspace({
               </p>
             </div>
           </div>
-          <p>{o.description}</p>
-          <h4>Capabilities / products / access</h4>
-          <p>{o.capabilities || "Not recorded"}</p>
-          <h4>Needs</h4>
-          <p>{o.needs || "Not recorded"}</p>
-          {o.event_date && <p>Event date: {o.event_date}</p>}
-          {o.website && <SafeLink url={o.website} />}
+          <FAQ
+            key={o.id}
+            items={[
+              {
+                id: "about",
+                question: "About",
+                answer: <p>{o.description || "Not added yet."}</p>,
+              },
+              {
+                id: "offers",
+                question: "What can they offer?",
+                answer: <p>{o.capabilities || "Not added yet."}</p>,
+              },
+              {
+                id: "needs",
+                question: "What do they need?",
+                answer: <p>{o.needs || "Not added yet."}</p>,
+              },
+            ]}
+          />
+          {o.event_date && <p>{o.event_date}</p>}
+          {companyLinks(o).map((url, index) => (
+            <p key={index}>
+              <SafeLink url={url} />
+            </p>
+          ))}
           <h4>People you know here</h4>
           {data.affiliations
             .filter((a) => a.organization_id === o.id)
@@ -1642,7 +1771,7 @@ export default function Workspace({
                 <Badge>{r.verification}</Badge>
               </p>
             ))}
-          <p className="small muted">{o.notes}</p>
+          <p className="small muted">{companyNotes(o.notes).notes}</p>
           <div className="actions">
             <button className="secondary" onClick={() => setEditOrg(o)}>
               Edit record
@@ -1675,7 +1804,9 @@ export default function Workspace({
         <PersonForm
           key={editPerson.id}
           person={editPerson}
+          data={data}
           busy={busy}
+          error={error}
           onSave={savePerson}
           onClose={() => setEditPerson(null)}
         />

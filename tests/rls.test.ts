@@ -68,6 +68,14 @@ test("real PostgreSQL migration: owner RLS, cross-owner links, graph, cleanup an
     await db.exec(
       `insert into public.opportunities(owner_id,title,person_ids,organization_ids) values('${A}','Valid',array['${P}'::uuid],array['${O}'::uuid]);`,
     );
+    await db.exec(
+      `insert into public.activities(owner_id,person_id,text,done) values('${A}','${P}','Private note · saved',true);`,
+    );
+    await assert.rejects(() =>
+      db.exec(
+        `insert into public.activities(owner_id,person_id,text,done) values('${A}','${Q}','Cross-owner note',true);`,
+      ),
+    );
     assert.equal(
       (await db.query("select * from public.opportunity_people")).rows.length,
       1,
@@ -84,7 +92,21 @@ test("real PostgreSQL migration: owner RLS, cross-owner links, graph, cleanup an
       (await db.query("select * from public.opportunity_people")).rows.length,
       0,
     );
+    assert.equal(
+      (
+        await db.query<{ person_id: string | null }>(
+          "select person_id from public.activities",
+        )
+      ).rows[0].person_id,
+      null,
+      "contact deletion keeps the note without a dangling link",
+    );
     await db.exec(`select set_config('request.jwt.claim.sub','${B}',false);`);
+    assert.equal(
+      (await db.query("select * from public.activities")).rows.length,
+      0,
+      "other owners cannot read private notes",
+    );
     const b = await db.query<{ name: string }>(
       "select name from public.people",
     );

@@ -53,6 +53,7 @@ export const selfProfileSchema = z.object({
   theme: z.enum(themeIds).default("lime"),
   photo: photoSchema.default(""),
   links: profileLinksSchema.max(10).default([]),
+  companyLinks: profileLinksSchema.max(10).default([]),
   headline: z.string().trim().max(150),
   location: z.string().trim().max(120),
   offers: z.string().trim().max(2000),
@@ -70,6 +71,7 @@ export const blankSelfProfile = (): SelfProfile => ({
   companyName: "",
   photo: "",
   links: [],
+  companyLinks: [],
   headline: "",
   location: "",
   offers: "",
@@ -108,6 +110,7 @@ export function mergeDemoProfile(input: SelfProfile): SelfProfile {
       : "",
     photo: "/demo-profile.svg",
     links: [],
+    companyLinks: [],
     headline:
       input.role === "Founder" || input.role === "Business owner"
         ? "Founder & community builder"
@@ -127,6 +130,7 @@ export function mergeDemoProfile(input: SelfProfile): SelfProfile {
   for (const key of Object.keys(defaults) as (keyof SelfProfile)[])
     if (key === "theme") merged.theme = input.theme;
     else if (key === "links") merged.links = input.links;
+    else if (key === "companyLinks") merged.companyLinks = input.companyLinks;
     else if (key !== "role" && input[key].trim())
       merged[key] = input[key].trim();
   return selfProfileSchema.parse(merged);

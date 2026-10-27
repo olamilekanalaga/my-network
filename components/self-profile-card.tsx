@@ -92,6 +92,22 @@ export default function SelfProfileCard({
                   <Plus size={13} />
                 </button>
               )}
+              {profile.companyLinks.length > 0 && (
+                <div className="company-socials">
+                  {profile.companyLinks.map((url, index) => (
+                    <a
+                      key={index}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`Company link ${index + 1}`}
+                    >
+                      <Globe size={14} />
+                      <ArrowUpRight size={11} />
+                    </a>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
           <div className="identity-detail">

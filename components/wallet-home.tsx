@@ -10,7 +10,7 @@ import {
   BriefcaseBusiness,
   Wrench,
   ScanLine,
-  Bell,
+  StickyNote,
 } from "lucide-react";
 import type { Person } from "@/lib/types";
 import {
@@ -33,6 +33,7 @@ export default function WalletHome({
   onLayer,
   onQuestion,
   onFollowups,
+  onNotes,
 }: {
   name: string;
   localOnly: boolean;
@@ -46,6 +47,7 @@ export default function WalletHome({
   onLayer: (layer: ContactLayer) => void;
   onQuestion: (question: string) => void;
   onFollowups: () => void;
+  onNotes: () => void;
 }) {
   const [list, setList] = useState<"contacts" | "questions">("contacts");
   const [layer, setLayer] = useState<ContactLayer>("All contacts");
@@ -146,16 +148,11 @@ export default function WalletHome({
           </span>
           Ask my network
         </button>
-        <button
-          className="wallet-notifications"
-          aria-label={`Notifications${followups ? ` · ${followups} follow-ups` : ""}`}
-          onClick={onFollowups}
-        >
+        <button onClick={onNotes}>
           <span>
-            <Bell size={23} />
-            {followups > 0 && <i>{followups}</i>}
+            <StickyNote size={23} />
           </span>
-          Notifications
+          Notes
         </button>
       </div>
       <section

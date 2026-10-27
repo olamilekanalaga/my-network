@@ -101,6 +101,11 @@ export default function EntryFlow({ screen }: { screen: Screen }) {
                 draft = { ...(saved || initial), ...validRole.data };
                 if (typeof raw.photo === "string")
                   draft.photo = safePhotoUrl(raw.photo);
+                if (Array.isArray(raw.companyLinks))
+                  draft.companyLinks = raw.companyLinks
+                    .filter((v): v is string => typeof v === "string")
+                    .slice(0, 10)
+                    .map((v) => v.slice(0, 1000));
                 if (Array.isArray(raw.links))
                   draft.links = raw.links
                     .filter((link): link is string => typeof link === "string")
@@ -209,6 +214,7 @@ export default function EntryFlow({ screen }: { screen: Screen }) {
       const parsed = selfProfileSchema.safeParse({
         ...profile,
         links: normalizeLinks(profile.links),
+        companyLinks: normalizeLinks(profile.companyLinks),
       });
       if (!parsed.success) throw new Error(parsed.error.issues[0].message);
       if (mode === "demo")
@@ -260,6 +266,7 @@ export default function EntryFlow({ screen }: { screen: Screen }) {
           mergeDemoProfile({
             ...profile,
             links: normalizeLinks(profile.links),
+            companyLinks: normalizeLinks(profile.companyLinks),
           }),
         ),
       );
@@ -462,6 +469,17 @@ export default function EntryFlow({ screen }: { screen: Screen }) {
                     </Field>
                   )}
                 </div>
+                {["Founder", "Business owner", "Agency"].includes(
+                  profile.role,
+                ) && (
+                  <ProfileLinks
+                    label="Company website or socials"
+                    value={profile.companyLinks}
+                    onChange={(companyLinks) =>
+                      setProfile((p) => ({ ...p, companyLinks }))
+                    }
+                  />
+                )}
                 <div className="goal-next">
                   <span>In your own words. No boxes to fit into.</span>
                 </div>
@@ -524,6 +542,9 @@ export default function EntryFlow({ screen }: { screen: Screen }) {
                       onChange={(e) => set("name", e.target.value)}
                     />
                   </Field>
+                </div>
+                <details className="company-setup">
+                  <summary>Company details (optional)</summary>{" "}
                   <Field label="Company you work with (optional)">
                     <input
                       autoComplete="organization"
@@ -533,7 +554,14 @@ export default function EntryFlow({ screen }: { screen: Screen }) {
                       onChange={(e) => set("workCompany", e.target.value)}
                     />
                   </Field>
-                </div>
+                  <ProfileLinks
+                    label="Company website or socials"
+                    value={profile.companyLinks}
+                    onChange={(companyLinks) =>
+                      setProfile((p) => ({ ...p, companyLinks }))
+                    }
+                  />
+                </details>
                 <Field label="Position or role (optional)">
                   <input
                     autoComplete="organization-title"

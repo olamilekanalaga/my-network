@@ -147,15 +147,17 @@ function linkType(value: string) {
 export function ProfileLinks({
   value,
   onChange,
+  label = "Website or social links",
 }: {
   value: string[];
   onChange: (links: string[]) => void;
+  label?: string;
 }) {
   const [types, setTypes] = useState<Record<number, string>>({});
   return (
     <details className="links-dropdown">
       <summary>
-        Website or social links{" "}
+        {label}{" "}
         <span>
           Optional
           {value.filter((v) => v.trim()).length

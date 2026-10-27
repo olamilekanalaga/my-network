@@ -59,3 +59,17 @@ Demo setup is optional. Enter demo now opens the workspace from the role step. B
 Added tactile shadows, card entrance transitions, hover lift on pointer devices, button press feedback, and role-field transitions across onboarding, wallet Home, contacts, assistant, profile, and dialogs. Reduced-motion preferences disable the movement. These are product interactions; no analytical reports or charts were added.
 
 Validation: all 30 tests, TypeScript, and the production build passed. Browser checks passed for dropdown/conditional fields, separate pages, no-input demo entry, completing both demo steps empty, partial-input precedence, draft back/reload persistence, displayed company details, reduced-motion behavior, and mobile overflow/runtime errors.
+
+## Simpler roles, optional photos, and professional links
+
+Removed Job seeker and Business developer from the main onboarding choices. Skilled worker / Talent now includes business developer in its free-text examples. Existing saved profiles and temporary drafts with either retired role are migrated to Skilled worker / Talent while preserving typed descriptions and other details.
+
+Removed category pills from wallet contact rows and Contacts cards. Categories remain editable and continue to power counts and filters; profile details still show saved categorization.
+
+Contact editing and personal profile setup now offer an optional JPG/PNG/WebP photo picker, preview, and removal. Images are center-cropped and compressed locally into small JPEG thumbnails capped at 18,000 characters, compatible with existing record limits. The thumbnail is saved with the contact or self-profile using existing storage; no new bucket, public image service, or external upload credentials are needed. Avatars use the saved photo in Home, Contacts, profiles, and match results, with initials if the photo is absent or fails to load. Original files and their metadata are not retained.
+
+Both contact and self-profile editors have optional website/social links. Bare domains are normalized to HTTPS; only HTTP/HTTPS links are accepted. Links are displayed in the private profile as external links, not posts, feeds, followers, or public social profiles. Self-profile photos and links survive onboarding back/next navigation and use existing account metadata or browser-local demo storage. Profile images and links are not added to AI evidence retrieval.
+
+Validation: 34 automated tests and the production build passed. Added coverage for image bounds/protocols, link normalization/protocols, removed-role migration, and retaining optional media in demo profiles.
+
+Browser validation passed for simplified dropdown choices, business-development talent examples, self-profile and contact photo upload/preview/persistence/removal, onboarding back/next preservation, normalized optional links, removed list pills, mobile overflow, and browser runtime errors. Shared field labels now explicitly name their controls so prefilled textarea contents do not become part of the accessible label.

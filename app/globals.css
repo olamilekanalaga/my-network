@@ -3217,3 +3217,53 @@ a {
     transform: none !important;
   }
 }
+.avatar.avatar-photo {
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid #c2ccb5;
+  padding: 0;
+  display: inline-block;
+}
+.photo-picker {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 0;
+  margin: 10px 0;
+}
+.photo-picker > div {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 7px;
+}
+.photo-picker small {
+  color: #62665d;
+  font-size: 11px;
+}
+.photo-upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  min-height: 40px;
+}
+.photo-upload input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  cursor: pointer;
+}
+.photo-upload:focus-within {
+  outline: 3px solid #678746;
+  outline-offset: 3px;
+}
+.photo-picker .text-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+}

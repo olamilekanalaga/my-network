@@ -435,7 +435,10 @@ export default function Workspace({
           </button>
         )}
         <button className="account" onClick={() => setTab("Profile")}>
-          <Avatar name={profile?.name || store.email || "Your Workspace"} />
+          <Avatar
+            name={profile?.name || store.email || "Your Workspace"}
+            photo={profile?.photo}
+          />
           <span>
             <strong>
               {mode === "demo"
@@ -483,7 +486,10 @@ export default function Workspace({
               <Bell size={19} />
               {followups.length > 0 && <i />}
             </button>
-            <Avatar name={profile?.name || "Your Workspace"} />
+            <Avatar
+              name={profile?.name || "Your Workspace"}
+              photo={profile?.photo}
+            />
           </div>
         </header>
         <main>
@@ -514,6 +520,7 @@ export default function Workspace({
             <WalletHome
               localOnly={mode === "demo"}
               name={profile?.name || "there"}
+              photo={profile?.photo}
               people={data.people}
               history={questionHistory(data.activities)}
               followups={followups.length}
@@ -1026,7 +1033,11 @@ export default function Workspace({
               </div>
               {profile && (
                 <section className="profile-focus">
-                  <Avatar name={profile.name} size="large" />
+                  <Avatar
+                    name={profile.name}
+                    photo={profile.photo}
+                    size="large"
+                  />
                   <div>
                     <h2>{profile.name}</h2>
                     <p>
@@ -1042,6 +1053,11 @@ export default function Workspace({
                       <p>{profile.roleDescription}</p>
                     )}
                     <p>{profile.headline}</p>
+                    {profile.links.map((link) => (
+                      <p key={link}>
+                        <SafeLink url={link} />
+                      </p>
+                    ))}
                     <p>
                       <b>Your next move:</b> {profile.goal}
                     </p>
@@ -1311,16 +1327,7 @@ export default function Workspace({
       {p && (
         <Modal title="Relationship profile" onClose={() => setPerson(null)}>
           <div className="profile-head">
-            {p.photo && /^https?:\/\//.test(p.photo) ? (
-              <img
-                className="profile-photo"
-                src={p.photo}
-                alt={p.name}
-                referrerPolicy="no-referrer"
-              />
-            ) : (
-              <Avatar name={p.name} size="large" />
-            )}
+            <Avatar name={p.name} photo={p.photo} size="large" />
             <div>
               <h2>{p.name}</h2>
               <p>{p.position}</p>
@@ -1939,19 +1946,12 @@ function ContactCard({
   return (
     <button className="contact-card" onClick={onClick}>
       <div className="contact-top">
-        <Avatar name={p.name} />
+        <Avatar name={p.name} photo={p.photo} />
         <ArrowUpRight size={16} />
       </div>
       <h3>{p.name}</h3>
       <p className="position">{p.position || "Add a little context"}</p>
       <span className="location">{p.location || "Location not recorded"}</span>
-      <div className="chips">
-        {p.categories.slice(0, 3).map((c) => (
-          <Badge key={c} tone={c === "Customer" ? "blue" : ""}>
-            {c}
-          </Badge>
-        ))}
-      </div>
       <div className="contact-need">
         <span>
           {p.services ? "PROVIDES" : p.needs ? "LOOKING FOR" : "NEXT STEP"}

@@ -1,5 +1,7 @@
 "use client";
 import { useState } from "react";
+import { PhotoPicker, ProfileLinks } from "./profile-media";
+import { normalizeLinks } from "@/lib/profile-media";
 import { Field, Modal, Multi } from "./ui";
 import {
   categories,
@@ -22,6 +24,7 @@ export function PersonForm({
   busy: boolean;
 }) {
   const [p, setP] = useState(person);
+  const [photoBusy, setPhotoBusy] = useState(false);
   const set = (k: keyof Person, v: unknown) => setP((x) => ({ ...x, [k]: v }));
   const input = (k: keyof Person, label: string, kind = "text") => (
     <Field key={k} label={label}>
@@ -51,6 +54,7 @@ export function PersonForm({
             onSave({
               ...p,
               name: p.name.trim(),
+              links: normalizeLinks(p.links),
               updated_at: new Date().toISOString(),
             });
         }}
@@ -59,6 +63,12 @@ export function PersonForm({
           Start with the basics. Add what you actually know; leave unknown
           details empty.
         </p>
+        <PhotoPicker
+          name={p.name}
+          value={p.photo}
+          onChange={(value) => set("photo", value)}
+          onBusyChange={setPhotoBusy}
+        />
         <div className="context-guide">
           <strong>Four things that make matching useful</strong>
           <p>
@@ -77,7 +87,6 @@ export function PersonForm({
           {input("phone", "Phone", "tel")}
           {input("location", "Location")}
           {input("industry", "Industry")}
-          {input("photo", "Photo URL (optional)", "url")}
         </div>
         <Field label="Categories — choose any that apply">
           <Multi
@@ -117,14 +126,10 @@ export function PersonForm({
           "Promises / agreements (record exact scope)",
           "textarea",
         )}
-        <Field label="Professional links (one per line)">
-          <textarea
-            value={p.links.join("\n")}
-            onChange={(e) =>
-              set("links", e.target.value.split("\n").filter(Boolean))
-            }
-          />
-        </Field>
+        <ProfileLinks
+          value={p.links}
+          onChange={(links) => set("links", links)}
+        />
         <div className="form-grid">
           <Field label="Relationship strength">
             <select
@@ -151,7 +156,10 @@ export function PersonForm({
         </div>
         {input("source", "Source of profile information")}
         {input("consent", "Consent / sharing restrictions", "textarea")}
-        <button className="primary wide" disabled={busy || !p.name.trim()}>
+        <button
+          className="primary wide"
+          disabled={busy || photoBusy || !p.name.trim()}
+        >
           Save profile
         </button>
       </form>

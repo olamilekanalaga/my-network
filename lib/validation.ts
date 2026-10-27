@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { photoSchema, profileLinksSchema } from "./profile-media";
 import { stages } from "./types";
 const s = z.string().max(20000),
   id = z.uuid(),
@@ -12,7 +13,7 @@ export const schemas = {
     name: z.string().trim().min(1).max(200),
     email: s,
     phone: s,
-    photo: s,
+    photo: photoSchema,
     location: s,
     position: s,
     industry: s,
@@ -23,7 +24,7 @@ export const schemas = {
     needs: s,
     offers: s,
     resources: s,
-    links: arr,
+    links: profileLinksSchema,
     met: s,
     met_date: s,
     notes: s,

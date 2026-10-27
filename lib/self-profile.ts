@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { photoSchema, profileLinksSchema } from "./profile-media";
 export const entryModeKey = "network-entry-mode";
 export const demoProfileKey = "network-self-profile-demo-v1";
 export const profileRoles = [
@@ -6,9 +7,7 @@ export const profileRoles = [
   "Skilled worker / Talent",
   "Founder",
   "Agency",
-  "Business developer",
   "Recruiter",
-  "Job seeker",
   "Other",
 ] as const;
 export const roleFields = {
@@ -18,7 +17,8 @@ export const roleFields = {
   },
   "Skilled worker / Talent": {
     label: "What’s your skill or talent?",
-    placeholder: "Data analyst, content creator, electrician, designer…",
+    placeholder:
+      "Data analyst, content creator, business developer, electrician…",
   },
   Founder: {
     label: "What are you building?",
@@ -28,17 +28,9 @@ export const roleFields = {
     label: "What kind of agency do you run?",
     placeholder: "Recruitment, marketing, creative, talent management…",
   },
-  "Business developer": {
-    label: "What do you do, exactly?",
-    placeholder: "Partnerships for fintech companies, B2B sales…",
-  },
   Recruiter: {
     label: "What kinds of roles do you recruit for?",
     placeholder: "Tech talent, healthcare professionals, creative roles…",
-  },
-  "Job seeker": {
-    label: "What do you do, or want to do?",
-    placeholder: "Data analysis, product design, content creation…",
   },
   Other: {
     label: "Tell us what you do",
@@ -68,6 +60,8 @@ export const selfProfileSchema = z.object({
   role: z.enum(profileRoles),
   roleDescription: z.string().trim().max(2000).default(""),
   companyName: z.string().trim().max(150).default(""),
+  photo: photoSchema.default(""),
+  links: profileLinksSchema.max(10).default([]),
   headline: z.string().trim().max(150),
   location: z.string().trim().max(120),
   offers: z.string().trim().max(2000),
@@ -80,6 +74,8 @@ export const blankSelfProfile = (): SelfProfile => ({
   role: "Business owner",
   roleDescription: "",
   companyName: "",
+  photo: "",
+  links: [],
   headline: "",
   location: "",
   offers: "",
@@ -87,7 +83,7 @@ export const blankSelfProfile = (): SelfProfile => ({
   goal: "",
 });
 export function readSelfProfile(value: unknown): SelfProfile | null {
-  const parsed = selfProfileSchema.safeParse(value);
+  const parsed = selfProfileSchema.safeParse(migrateProfileRole(value));
   return parsed.success ? parsed.data : null;
 }
 
@@ -102,9 +98,7 @@ export function mergeDemoProfile(input: SelfProfile): SelfProfile {
     Founder: "I’m building tools that help small businesses grow.",
     Agency: "Marketing and content creation",
     "Skilled worker / Talent": "Data analysis and content creation",
-    "Business developer": "Partnerships and business development",
     Recruiter: "Recruiting design and technology talent",
-    "Job seeker": "Product design and user research",
     Other: "Creative projects and community building",
   };
   const defaults: SelfProfile = {
@@ -114,6 +108,8 @@ export function mergeDemoProfile(input: SelfProfile): SelfProfile {
     companyName: ["Founder", "Business owner", "Agency"].includes(input.role)
       ? "Studio North"
       : "",
+    photo: "",
+    links: [],
     headline: "",
     location: "London",
     offers: input.roleDescription.trim() || defaultDetails[input.role],
@@ -122,6 +118,27 @@ export function mergeDemoProfile(input: SelfProfile): SelfProfile {
   };
   const merged = { ...defaults };
   for (const key of Object.keys(defaults) as (keyof SelfProfile)[])
-    if (key !== "role" && input[key].trim()) merged[key] = input[key].trim();
+    if (key === "links") merged.links = input.links;
+    else if (key !== "role" && input[key].trim())
+      merged[key] = input[key].trim();
   return selfProfileSchema.parse(merged);
+}
+
+export function migrateProfileRole(value: unknown): unknown {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  const saved = value as Record<string, unknown>;
+  if (saved.role !== "Business developer" && saved.role !== "Job seeker")
+    return value;
+  return {
+    ...saved,
+    role: "Skilled worker / Talent",
+    roleDescription:
+      typeof saved.roleDescription === "string" && saved.roleDescription.trim()
+        ? saved.roleDescription
+        : saved.role === "Business developer"
+          ? "Business development"
+          : typeof saved.headline === "string" && saved.headline.trim()
+            ? saved.headline
+            : "Exploring my next opportunity",
+  };
 }

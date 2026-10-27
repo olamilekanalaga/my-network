@@ -1,6 +1,15 @@
 "use client";
 import { X, Check, ArrowUpRight } from "lucide-react";
-import type { ReactNode } from "react";
+import {
+  useState,
+  useId,
+  Children,
+  cloneElement,
+  isValidElement,
+  type ReactNode,
+  type ReactElement,
+} from "react";
+import { safePhotoUrl } from "@/lib/profile-media";
 export function Badge({
   children,
   tone = "",
@@ -10,7 +19,28 @@ export function Badge({
 }) {
   return <span className={`badge ${tone}`}>{children}</span>;
 }
-export function Avatar({ name, size = "" }: { name: string; size?: string }) {
+export function Avatar({
+  name,
+  photo = "",
+  size = "",
+}: {
+  name: string;
+  photo?: string;
+  size?: string;
+}) {
+  const [failed, setFailed] = useState("");
+  const src = safePhotoUrl(photo);
+  if (src && failed !== src)
+    return (
+      <img
+        className={`avatar avatar-photo ${size}`}
+        src={src}
+        alt={name}
+        referrerPolicy="no-referrer"
+        loading="lazy"
+        onError={() => setFailed(src)}
+      />
+    );
   return (
     <span
       className={`avatar ${size}`}
@@ -64,10 +94,20 @@ export function Field({
   label: string;
   children: ReactNode;
 }) {
+  const labelId = useId();
   return (
     <label className="field">
-      <span>{label}</span>
-      {children}
+      <span id={labelId}>{label}</span>
+      {Children.map(children, (child) =>
+        isValidElement(child) &&
+        typeof child.type === "string" &&
+        ["input", "textarea", "select"].includes(child.type)
+          ? cloneElement(
+              child as ReactElement<{ "aria-labelledby"?: string }>,
+              { "aria-labelledby": labelId },
+            )
+          : child,
+      )}
     </label>
   );
 }

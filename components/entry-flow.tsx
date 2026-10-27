@@ -1,4 +1,5 @@
 "use client";
+import { z } from "zod";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Network, ArrowRight, ArrowUpRight, ShieldCheck } from "lucide-react";
@@ -11,6 +12,7 @@ import {
   roleStepSchema,
   roleDraftSchema,
   mergeDemoProfile,
+  migrateProfileRole,
   demoProfileKey,
   entryModeKey,
   readSelfProfile,
@@ -18,6 +20,8 @@ import {
   type SelfProfile,
 } from "@/lib/self-profile";
 import { Field } from "./ui";
+import { PhotoPicker, ProfileLinks } from "./profile-media";
+import { safePhotoUrl, normalizeLinks } from "@/lib/profile-media";
 import Workspace from "./workspace";
 
 type Screen = "signin" | "onboarding" | "profile" | "workspace";
@@ -28,6 +32,7 @@ export default function EntryFlow({ screen }: { screen: Screen }) {
   const [profile, setProfile] = useState<SelfProfile>(blankSelfProfile);
   const [error, setError] = useState("");
   const [draftKey, setDraftKey] = useState("network-profile-draft-demo");
+  const [photoBusy, setPhotoBusy] = useState(false);
   const [busy, setBusy] = useState(false);
   useEffect(() => {
     let active = true;
@@ -73,7 +78,9 @@ export default function EntryFlow({ screen }: { screen: Screen }) {
         let draft = null;
         if (selected && (screen === "onboarding" || screen === "profile")) {
           try {
-            const raw = JSON.parse(sessionStorage.getItem(key) || "null");
+            const raw = migrateProfileRole(
+              JSON.parse(sessionStorage.getItem(key) || "null"),
+            ) as Record<string, unknown> | null;
             if (raw && typeof raw === "object") {
               const validRole = (
                 selected === "demo" ? roleDraftSchema : roleStepSchema
@@ -88,6 +95,13 @@ export default function EntryFlow({ screen }: { screen: Screen }) {
                   "goal",
                 ] as const;
                 draft = { ...(saved || initial), ...validRole.data };
+                if (typeof raw.photo === "string")
+                  draft.photo = safePhotoUrl(raw.photo);
+                if (Array.isArray(raw.links))
+                  draft.links = raw.links
+                    .filter((link): link is string => typeof link === "string")
+                    .slice(0, 10)
+                    .map((link) => link.slice(0, 1000));
                 for (const field of fields)
                   if (typeof raw[field] === "string")
                     draft[field] = raw[field].slice(
@@ -133,7 +147,11 @@ export default function EntryFlow({ screen }: { screen: Screen }) {
         setReady(true);
       } catch (e) {
         if (active) {
-          setError((e as Error).message);
+          setError(
+            e instanceof z.ZodError
+              ? e.issues[0].message
+              : (e as Error).message,
+          );
           setReady(true);
         }
       }
@@ -170,7 +188,9 @@ export default function EntryFlow({ screen }: { screen: Screen }) {
       });
       if (error) throw error;
     } catch (e) {
-      setError((e as Error).message);
+      setError(
+        e instanceof z.ZodError ? e.issues[0].message : (e as Error).message,
+      );
       setBusy(false);
     }
   }
@@ -195,7 +215,12 @@ export default function EntryFlow({ screen }: { screen: Screen }) {
         return;
       }
       const parsed = selfProfileSchema.safeParse(
-        mode === "demo" ? mergeDemoProfile(profile) : profile,
+        mode === "demo"
+          ? mergeDemoProfile({
+              ...profile,
+              links: normalizeLinks(profile.links),
+            })
+          : { ...profile, links: normalizeLinks(profile.links) },
       );
       if (!parsed.success) throw new Error(parsed.error.issues[0].message);
       if (mode === "demo")
@@ -209,7 +234,9 @@ export default function EntryFlow({ screen }: { screen: Screen }) {
       sessionStorage.removeItem(draftKey);
       router.push("/workspace");
     } catch (e) {
-      setError((e as Error).message);
+      setError(
+        e instanceof z.ZodError ? e.issues[0].message : (e as Error).message,
+      );
     } finally {
       setBusy(false);
     }
@@ -241,7 +268,12 @@ export default function EntryFlow({ screen }: { screen: Screen }) {
     try {
       localStorage.setItem(
         demoProfileKey,
-        JSON.stringify(mergeDemoProfile(profile)),
+        JSON.stringify(
+          mergeDemoProfile({
+            ...profile,
+            links: normalizeLinks(profile.links),
+          }),
+        ),
       );
       sessionStorage.removeItem(draftKey);
       router.push("/workspace");
@@ -269,7 +301,9 @@ export default function EntryFlow({ screen }: { screen: Screen }) {
       localStorage.removeItem(entryModeKey);
       router.replace("/");
     } catch (e) {
-      setError((e as Error).message);
+      setError(
+        e instanceof z.ZodError ? e.issues[0].message : (e as Error).message,
+      );
     }
   }
   const set = (key: keyof SelfProfile, value: string) =>
@@ -462,6 +496,12 @@ export default function EntryFlow({ screen }: { screen: Screen }) {
                 <div className="eyebrow">FIRST, LET’S MEET YOU</div>
                 <h2>Your profile. Your starting point.</h2>
                 <p>Keep it simple. Your people will bring the rest.</p>
+                <PhotoPicker
+                  name={profile.name}
+                  value={profile.photo}
+                  onChange={(photo) => set("photo", photo)}
+                  onBusyChange={setPhotoBusy}
+                />
                 <div className="form-grid">
                   <Field label="Your name">
                     <input
@@ -519,7 +559,11 @@ export default function EntryFlow({ screen }: { screen: Screen }) {
                     onChange={(e) => set("goal", e.target.value)}
                   />
                 </Field>
-                <button className="primary wide" disabled={busy}>
+                <ProfileLinks
+                  value={profile.links}
+                  onChange={(links) => setProfile((p) => ({ ...p, links }))}
+                />
+                <button className="primary wide" disabled={busy || photoBusy}>
                   {busy ? "Saving your profile…" : "Let’s build my network"}
                   <ArrowRight size={18} />
                 </button>

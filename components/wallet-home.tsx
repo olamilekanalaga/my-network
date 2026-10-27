@@ -21,6 +21,7 @@ import {
 import { Avatar, Empty } from "./ui";
 export default function WalletHome({
   name,
+  photo,
   localOnly,
   people,
   history,
@@ -34,6 +35,7 @@ export default function WalletHome({
   onFollowups,
 }: {
   name: string;
+  photo?: string;
   localOnly: boolean;
   people: Person[];
   history: QuestionHistory[];
@@ -69,7 +71,7 @@ export default function WalletHome({
           </h1>
           <p>Your network, all in one place.</p>
         </div>
-        <Avatar name={name} size="large" />
+        <Avatar name={name} photo={photo} size="large" />
       </div>
       <section className="network-balance" aria-label="Network overview">
         <div className="balance-top">
@@ -192,7 +194,7 @@ export default function WalletHome({
                   key={p.id}
                   onClick={() => onPerson(p.id)}
                 >
-                  <Avatar name={p.name} />
+                  <Avatar name={p.name} photo={p.photo} />
                   <span className="asset-person">
                     <strong>{p.name}</strong>
                     <small>
@@ -200,13 +202,6 @@ export default function WalletHome({
                         p.skills.filter(Boolean).slice(0, 2).join(" · ") ||
                         "Add what they do"}
                     </small>
-                  </span>
-                  <span className="asset-label">
-                    {p.categories.includes("Founder")
-                      ? "Founder"
-                      : inContactLayer(p, "Skilled workers")
-                        ? "Skilled"
-                        : p.categories[0] || "Contact"}
                   </span>
                   <ChevronRight size={16} />
                 </button>

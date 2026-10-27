@@ -237,7 +237,7 @@ export default function ImportWizard({
                       )
                     }
                   />
-                  <Avatar name={p.name} />
+                  <Avatar name={p.name} photo={p.photo} />
                   <span>
                     <strong>{p.name}</strong>
                     <small>{p.email || p.phone || "No contact details"}</small>
@@ -287,7 +287,7 @@ export default function ImportWizard({
               key={p.id}
               onClick={() => onEnrich(p)}
             >
-              <Avatar name={p.name} />
+              <Avatar name={p.name} photo={p.photo} />
               <strong>{p.name}</strong>
               <span className="text-link push">Add context →</span>
             </button>

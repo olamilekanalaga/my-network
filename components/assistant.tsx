@@ -189,7 +189,10 @@ export default function Assistant({
                   className="person-row"
                   onClick={() => onPerson(r.personId)}
                 >
-                  <Avatar name={r.name} />
+                  <Avatar
+                    name={r.name}
+                    photo={data.people.find((p) => p.id === r.personId)?.photo}
+                  />
                   <span>
                     <strong>{r.name}</strong>
                     <small>{r.why}</small>

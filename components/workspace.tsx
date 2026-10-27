@@ -1019,13 +1019,6 @@ export default function Workspace({
           )}
           {tab === "Profile" && (
             <>
-              <div className="page-heading">
-                <div>
-                  <div className="eyebrow">A WORKSPACE YOU CONTROL</div>
-                  <h1>Profile & settings</h1>
-                  <p>Your data, your permissions, your pace.</p>
-                </div>
-              </div>
               {profile && (
                 <section className="profile-focus">
                   <Avatar

@@ -484,6 +484,7 @@ export default function Workspace({
             </button>
             <Avatar
               name={profile?.name || "Your Workspace"}
+              photo={profile?.photo}
             />
           </div>
         </header>
@@ -515,7 +516,6 @@ export default function Workspace({
             <WalletHome
               localOnly={mode === "demo"}
               name={profile?.name || "there"}
-              photo={profile?.photo}
               people={data.people}
               history={questionHistory(data.activities)}
               followups={followups.length}
